@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@axiomhq/js": "^1.6.1",
+    "@axiomhq/nextjs": "^0.2.2",
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^5.4.0",
     "@supabase/ssr": "^0.10.3",

@@ -1,183 +1,138 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { MessageSquare, X, Send, Bot, User, Loader2 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
+import { MessageSquare, X, Send, Bot, RefreshCw } from "lucide-react";
 
-type Message = {
+interface ChatMessage {
   role: "user" | "assistant";
   content: string;
-};
+}
 
 export default function TreasuryChatbot() {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content: "Hello. I am your ApexLedger Executive Financial Advisor. How can I assist you with liquidity, risk management, or capital allocation today?",
-    },
-  ]);
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { role: "assistant", content: "Secured connection established. I am ready to process liquidity analysis, audit ledgers, or evaluate capital runway allocations. How may I assist you?" }
+  ]);
+  const [isTyping, setIsTyping] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
+  // Keep chat scrolled down smoothly as messages load
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isOpen]);
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, isTyping]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isTyping) return;
 
-    const userMessage = input.trim();
+    const userMsg: ChatMessage = { role: "user", content: input };
+    const updatedMessages = [...messages, userMsg];
+
+    setMessages(updatedMessages);
     setInput("");
-    setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
-    setIsLoading(true);
+    setIsTyping(true);
 
     try {
-      const res = await fetch("/api/chat", {
+      const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage }),
+        body: JSON.stringify({ messages: updatedMessages }),
       });
 
-      if (!res.ok) throw new Error("Failed to fetch response");
-
-      const data = await res.json();
-      
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: data.reply },
-      ]);
-    } catch (error) {
-      console.error(error);
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "I encountered an error accessing the financial models. Please try again later." },
-      ]);
+      const data = await response.json();
+      if (response.ok && data && data.content) {
+        setMessages((prev) => [...prev, { role: "assistant", content: data.content }]);
+      } else {
+        const errorMsg = data?.error || "System communication failure. Verify API telemetry records.";
+        setMessages((prev) => [...prev, { role: "assistant", content: `⚠️ ${errorMsg}` }]);
+      }
+    } catch (err) {
+      console.error("Failed to transmit query parameters:", err);
+      setMessages((prev) => [...prev, { role: "assistant", content: "⚠️ Network error — unable to reach the treasury intelligence node." }]);
     } finally {
-      setIsLoading(false);
+      setIsTyping(false);
     }
   };
 
   return (
-    <>
-      {/* Floating Action Button */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 p-4 rounded-full bg-slate-900 dark:bg-emerald-600 text-white shadow-xl hover:scale-105 transition-transform z-50 ${
-          isOpen ? "hidden" : "flex"
-        }`}
-        aria-label="Open Treasury Advisor"
-      >
-        <MessageSquare size={24} />
-      </button>
+    <div className="fixed bottom-6 right-6 z-50 font-sans text-sm">
+      {/* 🟢 Toggle Floating Action Button */}
+      {!isOpen && (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="flex items-center justify-center h-12 w-12 rounded-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white shadow-lg transition-transform active:scale-95 cursor-pointer"
+        >
+          <MessageSquare size={20} />
+        </button>
+      )}
 
-      {/* Chat Drawer/Modal */}
+      {/* 📂 Active Minimalist Corporate Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-80 sm:w-96 h-[500px] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden animate-fade-in">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-zinc-950 border-b border-slate-200 dark:border-zinc-800">
+        <div className="w-[360px] h-[460px] rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xl flex flex-col overflow-hidden animate-fade-in">
+          {/* Header Bar */}
+          <div className="px-4 py-3 border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50 dark:bg-zinc-900/50 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Bot className="text-emerald-600 dark:text-emerald-400" size={20} />
-              <h3 className="font-sans font-semibold text-slate-900 dark:text-zinc-100">
-                Treasury Advisor
-              </h3>
+              <Bot size={16} className="text-emerald-600 dark:text-emerald-400" />
+              <span className="font-semibold text-slate-800 dark:text-zinc-200 text-xs uppercase tracking-wider font-mono">
+                Treasury Intelligence Node
+              </span>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300 transition-colors"
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 cursor-pointer"
             >
-              <X size={20} />
+              <X size={16} />
             </button>
           </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`flex gap-3 ${
-                  msg.role === "user" ? "flex-row-reverse" : "flex-row"
-                }`}
-              >
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                    msg.role === "user"
-                      ? "bg-slate-900 dark:bg-zinc-800 text-white"
-                      : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
-                  }`}
-                >
-                  {msg.role === "user" ? <User size={14} /> : <Bot size={14} />}
+          {/* Messages Node Stream Window */}
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/30 dark:bg-zinc-950/20">
+            {messages.map((msg, index) => {
+              const isAI = msg.role === "assistant";
+              return (
+                <div key={index} className={`flex ${isAI ? "justify-start" : "justify-end"}`}>
+                  <div
+                    className={`max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed ${isAI
+                        ? "bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-300 border border-slate-100 dark:border-zinc-800/50 shadow-sm"
+                        : "bg-slate-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium"
+                      }`}
+                  >
+                    {msg.content}
+                  </div>
                 </div>
-                <div
-                  className={`px-4 py-2.5 rounded-2xl max-w-[80%] text-sm ${
-                    msg.role === "user"
-                      ? "bg-slate-900 dark:bg-zinc-800 text-white rounded-tr-sm whitespace-pre-wrap"
-                      : "bg-slate-100 dark:bg-zinc-800/50 text-slate-800 dark:text-zinc-200 rounded-tl-sm [&>p]:mb-2 last:[&>p]:mb-0 [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:mb-2 [&>strong]:font-semibold"
-                  }`}
-                >
-                  {msg.role === "user" ? (
-                    msg.content
-                  ) : (
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
-                  )}
-                </div>
-              </div>
-            ))}
-            {isLoading && (
-              <div className="flex gap-3 flex-row">
-                <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                  <Bot size={14} />
-                </div>
-                <div className="px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-zinc-800/50 text-slate-800 dark:text-zinc-200 rounded-tl-sm flex items-center gap-2">
-                  <Loader2 size={14} className="animate-spin" />
-                  <span className="text-sm">Analyzing...</span>
-                </div>
+              );
+            })}
+
+            {isTyping && (
+              <div className="flex justify-start items-center gap-1.5 text-[10px] font-mono text-slate-400 dark:text-zinc-500 uppercase px-1">
+                <RefreshCw size={10} className="animate-spin text-emerald-500" />
+                Processing data logs...
               </div>
             )}
-            <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
-          <div className="p-4 bg-white dark:bg-zinc-900 border-t border-slate-200 dark:border-zinc-800">
-            {/* Quick Actions */}
-            {messages.length <= 2 && (
-              <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide">
-                {["Analyze liquidity", "Show risk profile", "Recent outgoings"].map((action) => (
-                  <button
-                    key={action}
-                    onClick={() => setInput(action)}
-                    className="whitespace-nowrap px-3 py-1.5 text-[11px] font-mono rounded-full border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/50 text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors"
-                  >
-                    {action}
-                  </button>
-                ))}
-              </div>
-            )}
-            <form onSubmit={handleSubmit} className="flex gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about liquidity, risk, etc..."
-                className="flex-1 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500"
-              />
-              <button
-                type="submit"
-                disabled={isLoading || !input.trim()}
-                className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white w-10 h-10 rounded-xl flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Send size={16} />
-              </button>
-            </form>
-          </div>
+          {/* Outbound Input Field Submission Control Form */}
+          <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-100 dark:border-zinc-800/60 bg-white dark:bg-zinc-900 flex items-center gap-2">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask about runway parameters or settlements..."
+              className="flex-1 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800/80 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500 focus:dark:border-emerald-400 font-sans"
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || isTyping}
+              className="p-1.5 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-emerald-500 dark:hover:text-emerald-400 disabled:opacity-40 transition-colors cursor-pointer"
+            >
+              <Send size={14} />
+            </button>
+          </form>
         </div>
       )}
-    </>
+    </div>
   );
 }

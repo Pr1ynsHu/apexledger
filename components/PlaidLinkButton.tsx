@@ -3,9 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { usePlaidLink } from "react-plaid-link";
 import { ShieldAlert, Loader2, AlertCircle } from "lucide-react";
-import { generateLinkToken } from "@/lib/actions/plaid.actions";
-import { exchangePublicToken } from "@/lib/actions/vaults.actions";
-
+import { generateLinkToken, exchangePublicToken } from "@/lib/actions/plaid.actions";
 interface PlaidButtonProps {
     userId: string;
 }
@@ -43,8 +41,7 @@ export default function PlaidLinkButton({ userId }: PlaidButtonProps) {
             const response = await exchangePublicToken({
                 publicToken: public_token,
                 userId: userId,
-                institutionId: metadata.institution?.institution_id || "ins_mock",
-                bankName: metadata.institution?.name || "Institutional Asset Vault",
+                institutionName: metadata.institution?.name || "Institutional Asset Vault",
             });
             if (response.success) {
                 console.log("Vault successfully linked into database clusters!");

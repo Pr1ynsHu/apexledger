@@ -50,7 +50,7 @@ export default function RightSidebar() {
   const [isProfileExpanded, setIsProfileExpanded] = useState(false);
 
   return (
-    <aside className="hidden lg:flex flex-col w-[280px] min-h-screen border-l border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shrink-0 overflow-y-auto">
+    <aside className="hidden xl:flex flex-col w-[280px] min-h-screen border-l border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shrink-0 overflow-y-auto">
       {/* ─── Profile Card ─── */}
       <div className="px-4 pt-6 pb-5">
         <span className="text-[10px] font-mono font-semibold tracking-[0.2em] text-slate-500 dark:text-zinc-600 uppercase mb-4 block">

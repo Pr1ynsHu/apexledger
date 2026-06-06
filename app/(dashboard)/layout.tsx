@@ -9,25 +9,31 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-zinc-950">
-      {/* Desktop Left Sidebar */}
+    <div className="flex h-screen w-full overflow-hidden bg-slate-50 dark:bg-zinc-950">
+
+      {/* 1. Persistent Desktop Left Navigation Pane */}
       <Sidebar />
 
-      {/* Mobile Header + Nav */}
-      <MobileNav />
+      {/* 2. Unified Master Center Frame Column */}
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
 
-      {/* Main Content Area */}
-      <main className="flex-1 min-w-0 overflow-y-auto pt-14 md:pt-0">
-        <div className="p-4 md:p-6 lg:p-8">
-          {children}
-        </div>
-      </main>
+        {/* Mobile Header Controller containing Hamburger Toggle */}
+        <MobileNav />
 
-      {/* Desktop Right Sidebar */}
+        {/* Dynamic Inner Page Content Viewport with Adaptive Padding */}
+        <main className="flex-1 overflow-y-auto px-4 py-6 md:p-8 lg:p-10 scrollbar-thin">
+          <div className="max-w-[1200px] mx-auto w-full animate-fade-in">
+            {children}
+          </div>
+        </main>
+      </div>
+
+      {/* 3. Persistent Desktop Right Metadata/Metrics Panel */}
       <RightSidebar />
-      
-      {/* Global Treasury Chatbot Drawer */}
+
+      {/* 4. Global Treasury AI Assistant Interactive Toggle Node */}
       <TreasuryChatbot />
+
     </div>
   );
 }

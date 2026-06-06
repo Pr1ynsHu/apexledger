@@ -1,48 +1,61 @@
 import BalanceSummaryCard from "@/components/BalanceSummaryCard";
 import DonutChart from "@/components/DonutChart";
+import DashboardCharts from "@/components/DashboardCharts";
 import TransactionRow from "@/components/TransactionRow";
 import { TrendingUp, ArrowUpRight } from "lucide-react";
+import { createClient } from "@/lib/supabase";
 
-/* ─── Dummy Transaction Data ─── */
-const recentTransactions = [
-  {
-    id: "TXN-00482",
-    description: "Meridian Cloud Services",
-    amount: -12480.0,
-    timestamp: "2026-06-06T13:42:00Z",
-    status: "settled",
-  },
-  {
-    id: "TXN-00481",
-    description: "Quarterly Revenue Settlement",
-    amount: 285000.0,
-    timestamp: "2026-06-06T09:15:00Z",
-    status: "settled",
-  },
-  {
-    id: "TXN-00480",
-    description: "AWS Infrastructure Charges",
-    amount: -8745.32,
-    timestamp: "2026-06-05T18:30:00Z",
-    status: "settled",
-  },
-  {
-    id: "TXN-00479",
-    description: "External Audit Fee — Deloitte",
-    amount: -34000.0,
-    timestamp: "2026-06-05T11:00:00Z",
-    status: "pending",
-  },
-  {
-    id: "TXN-00478",
-    description: "Series B Tranche Deposit",
-    amount: 500000.0,
-    timestamp: "2026-06-04T16:20:00Z",
-    status: "settled",
-  },
-];
+export const revalidate = 0;
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const supabase = await createClient();
+
+  // Fetch consolidated liquidity from all active corporate bank accounts
+  const { data: accounts } = await supabase
+    .from("corporate_bank_accounts")
+    .select("current_balance");
+
+  const totalLiquidity = (accounts ?? []).reduce(
+    (sum: number, acc: { current_balance: number }) => sum + (acc.current_balance ?? 0),
+    0
+  );
+
+  const vaultCount = (accounts ?? []).length;
+
+  // Fetch the 7 most recent outbound transfers for the timeline chart
+  const { data: recentTransfers } = await supabase
+    .from("corporate_transfers")
+    .select("amount, created_at")
+    .order("created_at", { ascending: true })
+    .limit(7);
+
+  const transferHistory = (recentTransfers ?? []).map(
+    (tx: { amount: number; created_at: string }) => ({
+      date: new Date(tx.created_at).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+      amount: tx.amount,
+    })
+  );
+
+  // Fetch recent transactions for the ledger table (preserve existing UI)
+  const { data: recentTxRows } = await supabase
+    .from("corporate_transfers")
+    .select("id, amount, reference_memo, status, created_at")
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  const recentTransactions = (recentTxRows ?? []).map(
+    (tx: { id: string; amount: number; reference_memo: string; status: string; created_at: string }) => ({
+      id: tx.id?.slice(0, 12).toUpperCase() ?? "—",
+      description: tx.reference_memo ?? "Outbound Clearing",
+      amount: -(tx.amount ?? 0),
+      timestamp: tx.created_at,
+      status: tx.status === "pending" ? "pending" : "settled",
+    })
+  );
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -57,17 +70,23 @@ export default function DashboardPage() {
 
       {/* Top Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <BalanceSummaryCard totalCurrentBalance={550501.25} vaultCount={3} />
+        <BalanceSummaryCard totalCurrentBalance={totalLiquidity} vaultCount={vaultCount} />
         <DonutChart />
       </div>
+
+      {/* Dynamic Charts Section */}
+      <DashboardCharts
+        totalLiquidity={totalLiquidity}
+        transferHistory={transferHistory}
+      />
 
       {/* Metrics Strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Net Inflow (30D)", value: "$785,000", change: "+18.2%", positive: true },
-          { label: "Net Outflow (30D)", value: "$234,225", change: "-4.1%", positive: true },
-          { label: "Pending Settlements", value: "2", change: null, positive: false },
-          { label: "Active Channels", value: "3", change: null, positive: false },
+          { label: "Consolidated Liquidity", value: new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(totalLiquidity), change: null, positive: false },
+          { label: "Active Channels", value: String(vaultCount), change: null, positive: false },
+          { label: "Recent Clearings", value: String(recentTransactions.length), change: null, positive: false },
+          { label: "Settlement Timeline", value: `${transferHistory.length} pts`, change: null, positive: false },
         ].map((metric) => (
           <div
             key={metric.label}
@@ -133,9 +152,17 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {recentTransactions.map((tx) => (
-                <TransactionRow key={tx.id} tx={tx} />
-              ))}
+              {recentTransactions.length > 0 ? (
+                recentTransactions.map((tx: any) => (
+                  <TransactionRow key={tx.id} tx={tx} />
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="px-5 py-8 text-center text-xs font-mono text-slate-400 dark:text-zinc-600 uppercase tracking-wider">
+                    No settlement records found
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
