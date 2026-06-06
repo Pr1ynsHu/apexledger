@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   try {
     const { message } = await req.json();
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `
       You are the ApexLedger Executive Financial Advisor, an AI assistant built into an enterprise-grade corporate treasury dashboard.
