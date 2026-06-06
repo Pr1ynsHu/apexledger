@@ -114,7 +114,7 @@ export default function TreasuryChatbot() {
                   {msg.role === "user" ? <User size={14} /> : <Bot size={14} />}
                 </div>
                 <div
-                  className={`px-4 py-2.5 rounded-2xl max-w-[80%] text-sm ${
+                  className={`px-4 py-2.5 rounded-2xl max-w-[80%] text-sm whitespace-pre-wrap ${
                     msg.role === "user"
                       ? "bg-slate-900 dark:bg-zinc-800 text-white rounded-tr-sm"
                       : "bg-slate-100 dark:bg-zinc-800/50 text-slate-800 dark:text-zinc-200 rounded-tl-sm"
