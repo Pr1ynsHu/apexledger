@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import {
   ArrowUpRight,
   Send,
@@ -5,10 +8,11 @@ import {
   CheckCircle2,
   AlertCircle,
   Building2,
+  X,
 } from "lucide-react";
 
 /* ─── Dummy Routing Queue ─── */
-const routingQueue = [
+const initialRoutingQueue = [
   {
     id: "RTG-00128",
     recipient: "Meridian Cloud Services LLC",
@@ -75,8 +79,39 @@ const statusConfig = {
 } as const;
 
 export default function TransferPage() {
+  const [queue, setQueue] = useState(initialRoutingQueue);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    recipient: "",
+    recipientBank: "",
+    amount: "",
+    method: "ACH",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleInitiate = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    // Simulate delay
+    setTimeout(() => {
+      const newTx = {
+        id: `RTG-00${Math.floor(Math.random() * 900) + 100}`,
+        recipient: formData.recipient,
+        recipientBank: formData.recipientBank,
+        amount: parseFloat(formData.amount),
+        method: formData.method,
+        status: "processing",
+        initiatedAt: new Date().toISOString(),
+      };
+      setQueue([newTx, ...queue]);
+      setIsSubmitting(false);
+      setIsModalOpen(false);
+      setFormData({ recipient: "", recipientBank: "", amount: "", method: "ACH" });
+    }, 1500);
+  };
+
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in relative">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div className="flex flex-col gap-1">
@@ -87,7 +122,10 @@ export default function TransferPage() {
             Manage disbursements, wire transfers, and ACH settlement queues.
           </p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-sm font-medium transition-all active:scale-[0.99] cursor-pointer">
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-sm font-medium transition-all active:scale-[0.99] cursor-pointer"
+        >
           <Send size={14} />
           Initiate Transfer
         </button>
@@ -125,12 +163,12 @@ export default function TransferPage() {
             </h3>
           </div>
           <span className="text-[10px] font-mono text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
-            {routingQueue.length} transfers
+            {queue.length} transfers
           </span>
         </div>
 
         <div className="divide-y divide-slate-100 dark:divide-zinc-800/30">
-          {routingQueue.map((transfer) => {
+          {queue.map((transfer) => {
             const status = statusConfig[transfer.status as keyof typeof statusConfig];
             const StatusIcon = status.icon;
 
@@ -192,6 +230,50 @@ export default function TransferPage() {
           })}
         </div>
       </div>
+
+      {/* Initiate Transfer Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 dark:bg-zinc-950/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden relative">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-zinc-800/60">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-zinc-100">Initiate Transfer</h2>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleInitiate} className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-mono tracking-wider text-slate-500 dark:text-zinc-400 uppercase mb-1.5">Recipient</label>
+                <input required type="text" value={formData.recipient} onChange={e => setFormData({...formData, recipient: e.target.value})} className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg text-slate-900 dark:text-zinc-100 focus:ring-2 focus:ring-emerald-500/50 outline-none" placeholder="e.g. Acme Corp" />
+              </div>
+              <div>
+                <label className="block text-xs font-mono tracking-wider text-slate-500 dark:text-zinc-400 uppercase mb-1.5">Recipient Bank</label>
+                <input required type="text" value={formData.recipientBank} onChange={e => setFormData({...formData, recipientBank: e.target.value})} className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg text-slate-900 dark:text-zinc-100 focus:ring-2 focus:ring-emerald-500/50 outline-none" placeholder="e.g. Chase" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-mono tracking-wider text-slate-500 dark:text-zinc-400 uppercase mb-1.5">Amount (USD)</label>
+                  <input required type="number" min="1" step="0.01" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg text-slate-900 dark:text-zinc-100 focus:ring-2 focus:ring-emerald-500/50 outline-none" placeholder="0.00" />
+                </div>
+                <div>
+                  <label className="block text-xs font-mono tracking-wider text-slate-500 dark:text-zinc-400 uppercase mb-1.5">Method</label>
+                  <select value={formData.method} onChange={e => setFormData({...formData, method: e.target.value})} className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg text-slate-900 dark:text-zinc-100 focus:ring-2 focus:ring-emerald-500/50 outline-none">
+                    <option value="ACH">ACH</option>
+                    <option value="WIRE">WIRE</option>
+                    <option value="SWIFT">SWIFT</option>
+                  </select>
+                </div>
+              </div>
+              <div className="pt-4 flex gap-3">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 text-sm font-medium transition-colors">Cancel</button>
+                <button type="submit" disabled={isSubmitting} className="flex-1 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors disabled:opacity-50 flex justify-center items-center">
+                  {isSubmitting ? <span className="animate-pulse">Authorizing...</span> : "Authorize Transfer"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

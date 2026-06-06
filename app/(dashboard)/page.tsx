@@ -1,6 +1,7 @@
 import BalanceSummaryCard from "@/components/BalanceSummaryCard";
 import DonutChart from "@/components/DonutChart";
-import { TrendingUp, ArrowUpRight, Clock } from "lucide-react";
+import TransactionRow from "@/components/TransactionRow";
+import { TrendingUp, ArrowUpRight } from "lucide-react";
 
 /* ─── Dummy Transaction Data ─── */
 const recentTransactions = [
@@ -133,49 +134,7 @@ export default function DashboardPage() {
             </thead>
             <tbody>
               {recentTransactions.map((tx) => (
-                <tr
-                  key={tx.id}
-                  className="border-b border-slate-50 dark:border-zinc-800/20 hover:bg-slate-50 dark:hover:bg-zinc-800/20 transition-colors"
-                >
-                  <td className="px-5 py-3 text-xs font-mono text-slate-500 dark:text-zinc-400">
-                    {tx.id}
-                  </td>
-                  <td className="px-5 py-3 text-sm text-slate-700 dark:text-zinc-300">
-                    {tx.description}
-                  </td>
-                  <td
-                    className={`px-5 py-3 text-sm font-mono font-medium text-right ${tx.amount >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-zinc-300"
-                      }`}
-                  >
-                    {tx.amount >= 0 ? "+" : ""}
-                    {new Intl.NumberFormat("en-US", {
-                      style: "currency",
-                      currency: "USD",
-                    }).format(Math.abs(tx.amount))}
-                  </td>
-                  <td className="px-5 py-3 hidden sm:table-cell">
-                    <span
-                      className={`inline-flex items-center gap-1 text-[10px] font-mono font-medium uppercase tracking-wider px-2 py-0.5 rounded-full ${tx.status === "settled"
-                          ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10"
-                          : "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10"
-                        }`}
-                    >
-                      {tx.status === "pending" && <Clock size={9} />}
-                      {tx.status}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3 text-xs font-mono text-slate-500 dark:text-zinc-500 text-right hidden md:table-cell">
-                    {new Date(tx.timestamp).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    })}{" "}
-                    {new Date(tx.timestamp).toLocaleTimeString("en-US", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: false,
-                    })}
-                  </td>
-                </tr>
+                <TransactionRow key={tx.id} tx={tx} />
               ))}
             </tbody>
           </table>

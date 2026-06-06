@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { MessageSquare, X, Send, Bot, User, Loader2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 type Message = {
   role: "user" | "assistant";
@@ -114,13 +115,17 @@ export default function TreasuryChatbot() {
                   {msg.role === "user" ? <User size={14} /> : <Bot size={14} />}
                 </div>
                 <div
-                  className={`px-4 py-2.5 rounded-2xl max-w-[80%] text-sm whitespace-pre-wrap ${
+                  className={`px-4 py-2.5 rounded-2xl max-w-[80%] text-sm ${
                     msg.role === "user"
-                      ? "bg-slate-900 dark:bg-zinc-800 text-white rounded-tr-sm"
-                      : "bg-slate-100 dark:bg-zinc-800/50 text-slate-800 dark:text-zinc-200 rounded-tl-sm"
+                      ? "bg-slate-900 dark:bg-zinc-800 text-white rounded-tr-sm whitespace-pre-wrap"
+                      : "bg-slate-100 dark:bg-zinc-800/50 text-slate-800 dark:text-zinc-200 rounded-tl-sm [&>p]:mb-2 last:[&>p]:mb-0 [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:mb-2 [&>strong]:font-semibold"
                   }`}
                 >
-                  {msg.content}
+                  {msg.role === "user" ? (
+                    msg.content
+                  ) : (
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  )}
                 </div>
               </div>
             ))}
@@ -140,6 +145,20 @@ export default function TreasuryChatbot() {
 
           {/* Input */}
           <div className="p-4 bg-white dark:bg-zinc-900 border-t border-slate-200 dark:border-zinc-800">
+            {/* Quick Actions */}
+            {messages.length <= 2 && (
+              <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide">
+                {["Analyze liquidity", "Show risk profile", "Recent outgoings"].map((action) => (
+                  <button
+                    key={action}
+                    onClick={() => setInput(action)}
+                    className="whitespace-nowrap px-3 py-1.5 text-[11px] font-mono rounded-full border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/50 text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors"
+                  >
+                    {action}
+                  </button>
+                ))}
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="flex gap-2">
               <input
                 type="text"

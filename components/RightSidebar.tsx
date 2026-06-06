@@ -8,6 +8,7 @@ import {
   HardDrive,
   Scale,
 } from "lucide-react";
+import { useState } from "react";
 
 /* ─── Dummy Data ─── */
 
@@ -46,6 +47,8 @@ const allocations = [
 ];
 
 export default function RightSidebar() {
+  const [isProfileExpanded, setIsProfileExpanded] = useState(false);
+
   return (
     <aside className="hidden lg:flex flex-col w-[280px] min-h-screen border-l border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shrink-0 overflow-y-auto">
       {/* ─── Profile Card ─── */}
@@ -119,10 +122,30 @@ export default function RightSidebar() {
           </div>
 
           {/* Expand */}
-          <button className="w-full mt-3.5 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-white dark:bg-zinc-800/40 hover:bg-slate-100 dark:hover:bg-zinc-800/70 border border-slate-200 dark:border-transparent text-slate-600 dark:text-zinc-500 hover:text-slate-900 dark:hover:text-zinc-300 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer">
+          <button 
+            onClick={() => setIsProfileExpanded(!isProfileExpanded)}
+            className="w-full mt-3.5 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-white dark:bg-zinc-800/40 hover:bg-slate-100 dark:hover:bg-zinc-800/70 border border-slate-200 dark:border-transparent text-slate-600 dark:text-zinc-500 hover:text-slate-900 dark:hover:text-zinc-300 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer"
+          >
             Full Profile
-            <ChevronDown size={12} />
+            <ChevronDown size={12} className={`transition-transform duration-200 ${isProfileExpanded ? "rotate-180" : ""}`} />
           </button>
+
+          {isProfileExpanded && (
+            <div className="mt-3 pt-3 border-t border-slate-200 dark:border-zinc-800/60 animate-fade-in space-y-2.5">
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-mono text-slate-500 dark:text-zinc-500 tracking-wider uppercase">Department</span>
+                <span className="text-xs text-slate-800 dark:text-zinc-200">Global Treasury & Markets</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-mono text-slate-500 dark:text-zinc-500 tracking-wider uppercase">Contact Email</span>
+                <span className="text-xs text-slate-800 dark:text-zinc-200">v.hargrove@apexledger.corp</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-mono text-slate-500 dark:text-zinc-500 tracking-wider uppercase">Device ID</span>
+                <span className="text-xs font-mono text-slate-800 dark:text-zinc-200">MBP-XQ89-SECURE</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
