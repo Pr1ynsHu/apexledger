@@ -13,14 +13,18 @@ import {
   ArrowUpRight,
   ChevronRight,
   Activity,
+  Settings,
+  LogOut,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
+import { signOutUser } from "@/lib/actions/auth.actions";
 
 const navItems = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
   { label: "Ledger Audit", href: "/ledger", icon: FileSearch },
   { label: "Connected Vaults", href: "/vaults", icon: Landmark },
   { label: "Outbound Routing", href: "/transfer", icon: ArrowUpRight },
+  { label: "Operator Profile", href: "/profile", icon: Settings },
 ];
 
 export default function MobileNav() {
@@ -146,7 +150,7 @@ export default function MobileNav() {
         </nav>
 
         {/* Status Footer */}
-        <div className="absolute bottom-4 left-3 right-3">
+        <div className="absolute bottom-4 left-3 right-3 flex flex-col gap-2">
           <div className="rounded-xl border border-slate-200 dark:border-zinc-800/80 bg-slate-50 dark:bg-zinc-900/40 p-3.5">
             <div className="flex items-center gap-2 mb-2">
               <Activity size={12} className="text-emerald-600 dark:text-emerald-400" />
@@ -163,6 +167,13 @@ export default function MobileNav() {
               </span>
             </div>
           </div>
+          <button 
+            onClick={() => signOutUser()}
+            className="flex items-center justify-center gap-2 w-full p-3 rounded-xl border border-slate-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/60 text-slate-500 hover:text-red-600 dark:text-zinc-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer"
+          >
+            <LogOut size={16} />
+            <span className="text-sm font-medium">Sign Out</span>
+          </button>
         </div>
       </div>
     </>

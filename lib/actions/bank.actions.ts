@@ -2,6 +2,7 @@
 
 import { plaidClient } from "@/lib/plaid";
 import { createClient } from "@/lib/supabase";
+import { log } from "@/lib/logger";
 
 export async function getInstitutionalBalances({ userId }: { userId: string }) {
     try {
@@ -41,7 +42,7 @@ export async function getInstitutionalBalances({ userId }: { userId: string }) {
                     sharableId: bank.sharable_id,
                 });
             } catch (plaidError) {
-                console.error(`Failed to sync vault ${bank.id} with Plaid:`, plaidError);
+                log.error(`Failed to sync vault ${bank.id} with Plaid:`, plaidError);
                 // Continue the loop even if one specific bank node fails to respond
             }
         }
@@ -49,7 +50,7 @@ export async function getInstitutionalBalances({ userId }: { userId: string }) {
         return { success: true, totalLiquidity, vaults: activeVaults };
 
     } catch (error: any) {
-        console.error("Critical failure fetching Plaid network data:", error);
+        log.error("Critical failure fetching Plaid network data:", error);
         return { success: false, error: "Failed to establish Plaid network link." };
     }
 }
@@ -103,7 +104,7 @@ export async function getInstitutionalTransactions({ userId }: { userId?: string
 
                 aggregatedTransactions = [...aggregatedTransactions, ...structuralRecords];
             } catch (err) {
-                console.error(`Skipping transaction node sync execution for vault ${bank.id}:`, err);
+                log.error(`Skipping transaction node sync execution for vault ${bank.id}:`, err);
             }
         }
 
@@ -114,7 +115,7 @@ export async function getInstitutionalTransactions({ userId }: { userId?: string
         };
 
     } catch (error: any) {
-        console.error("Critical failure streaming transaction matrices:", error);
+        log.error("Critical failure streaming transaction matrices:", error);
         return { success: false, error: "System synchronization failure with Plaid ledger nodes." };
     }
 }

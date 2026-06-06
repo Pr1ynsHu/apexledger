@@ -8,18 +8,14 @@ import {
   HardDrive,
   Scale,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabaseClient";
+import { OperatorProfile } from "@/lib/actions/profile.actions";
+import { AssetAllocation } from "@/lib/actions/allocations.actions";
 
 /* ─── Dummy Data ─── */
 
-const userProfile = {
-  name: "Victoria Hargrove",
-  role: "Chief Treasury Officer",
-  clearanceLevel: "L4 — Executive",
-  lastAuth: "2026-06-06T14:32:00Z",
-};
-
-const allocations = [
+const FALLBACK_ALLOCATIONS = [
   {
     label: "Software Licensing",
     category: "SFT",
@@ -46,8 +42,84 @@ const allocations = [
   },
 ];
 
-export default function RightSidebar() {
+export default function RightSidebar({ 
+  profile,
+  initialAllocations 
+}: { 
+  profile: OperatorProfile | null;
+  initialAllocations?: AssetAllocation[];
+}) {
   const [isProfileExpanded, setIsProfileExpanded] = useState(false);
+  const [liveAllocations, setLiveAllocations] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Map initial DB allocations to UI format
+    const formatAllocations = (dbAllocations: AssetAllocation[]) => {
+      if (!dbAllocations || dbAllocations.length === 0) return FALLBACK_ALLOCATIONS;
+      
+      return dbAllocations.map(a => {
+        // Map icon based on category
+        let icon = Monitor;
+        if (a.category === "HDW") icon = HardDrive;
+        if (a.category === "LGL") icon = Scale;
+
+        return {
+          label: a.label,
+          category: a.category,
+          amount: Number(a.amount_utilized),
+          budget: Number(a.budget_limit),
+          color: a.color_hex,
+          icon,
+        };
+      });
+    };
+
+    setLiveAllocations(formatAllocations(initialAllocations || []));
+
+    const supabase = createClient();
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel("realtime-allocations")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "asset_allocations" },
+        (payload) => {
+          // Because we only get the changed row, the easiest way to keep state strictly synced 
+          // without complex array merging is to just re-fetch or optimistically update.
+          // For this implementation, we will update the specific row in state:
+          setLiveAllocations((current) => {
+            const newRecord = payload.new as AssetAllocation;
+            if (!newRecord || !newRecord.category) return current;
+
+            return current.map(item => {
+              if (item.category === newRecord.category) {
+                return {
+                  ...item,
+                  amount: Number(newRecord.amount_utilized),
+                  budget: Number(newRecord.budget_limit),
+                };
+              }
+              return item;
+            });
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [initialAllocations]);
+
+  // Fallback to default if somehow null
+  const activeProfile = profile || {
+    name: "Operator",
+    role: "Chief Treasury Officer",
+    email: "operator@apexledger.corp",
+    clearance_level: "L4 — Executive",
+    updated_at: new Date().toISOString()
+  };
 
   return (
     <aside className="hidden xl:flex flex-col w-[280px] min-h-screen border-l border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shrink-0 overflow-y-auto">
@@ -68,10 +140,10 @@ export default function RightSidebar() {
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-semibold text-slate-900 dark:text-zinc-100 truncate">
-                {userProfile.name}
+                {activeProfile.name}
               </span>
               <span className="text-[11px] text-slate-500 dark:text-zinc-500 truncate">
-                {userProfile.role}
+                {activeProfile.role}
               </span>
             </div>
           </div>
@@ -86,7 +158,7 @@ export default function RightSidebar() {
                 </span>
               </div>
               <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-medium">
-                {userProfile.clearanceLevel}
+                {activeProfile.clearance_level}
               </span>
             </div>
 
@@ -97,7 +169,7 @@ export default function RightSidebar() {
                 Last Auth
               </span>
               <span className="text-[11px] font-mono text-slate-600 dark:text-zinc-400">
-                {new Date(userProfile.lastAuth).toLocaleTimeString("en-US", {
+                {new Date().toLocaleTimeString("en-US", {
                   hour: "2-digit",
                   minute: "2-digit",
                   hour12: false,
@@ -138,7 +210,7 @@ export default function RightSidebar() {
               </div>
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-mono text-slate-500 dark:text-zinc-500 tracking-wider uppercase">Contact Email</span>
-                <span className="text-xs text-slate-800 dark:text-zinc-200">v.hargrove@apexledger.corp</span>
+                <span className="text-xs text-slate-800 dark:text-zinc-200 truncate" title={activeProfile.email}>{activeProfile.email}</span>
               </div>
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-mono text-slate-500 dark:text-zinc-500 tracking-wider uppercase">Device ID</span>
@@ -159,7 +231,7 @@ export default function RightSidebar() {
         </span>
 
         <div className="space-y-4">
-          {allocations.map((item) => {
+          {liveAllocations.map((item) => {
             const percentage = Math.round((item.amount / item.budget) * 100);
             const Icon = item.icon;
 
@@ -239,7 +311,7 @@ export default function RightSidebar() {
                 style: "currency",
                 currency: "USD",
                 maximumFractionDigits: 0,
-              }).format(allocations.reduce((s, a) => s + a.amount, 0))}
+              }).format(liveAllocations.reduce((s, a) => s + a.amount, 0))}
             </span>
           </div>
           <div className="flex items-center justify-between mt-1.5">
@@ -251,7 +323,7 @@ export default function RightSidebar() {
                 style: "currency",
                 currency: "USD",
                 maximumFractionDigits: 0,
-              }).format(allocations.reduce((s, a) => s + a.budget, 0))}
+              }).format(liveAllocations.reduce((s, a) => s + a.budget, 0))}
             </span>
           </div>
         </div>

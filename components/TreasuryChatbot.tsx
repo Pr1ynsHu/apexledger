@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { MessageSquare, X, Send, Bot, RefreshCw } from "lucide-react";
+import { logClientError } from "@/lib/actions/telemetry.actions";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -50,7 +51,7 @@ export default function TreasuryChatbot() {
         setMessages((prev) => [...prev, { role: "assistant", content: `⚠️ ${errorMsg}` }]);
       }
     } catch (err) {
-      console.error("Failed to transmit query parameters:", err);
+      logClientError("Failed to transmit query parameters:", err);
       setMessages((prev) => [...prev, { role: "assistant", content: "⚠️ Network error — unable to reach the treasury intelligence node." }]);
     } finally {
       setIsTyping(false);

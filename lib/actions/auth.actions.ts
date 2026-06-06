@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase";
+import { log } from "@/lib/logger";
 import { revalidatePath } from "next/cache";
 
 interface SignUpParams {
@@ -50,7 +51,7 @@ export async function signUpUser(params: SignUpParams) {
 
         return { success: true, user: authData.user };
     } catch (error: any) {
-        console.error("Critical failure during signUpUser clearance processing:", error.message);
+        log.error("Critical failure during signUpUser clearance processing:", error);
         return { success: false, error: error.message || "Failed to finalize account clearance parameters." };
     }
 }
@@ -75,7 +76,21 @@ export async function signInUser({ email, password }: SignInParams) {
 
         return { success: true, user: data.user };
     } catch (error: any) {
-        console.error("Critical failure during signInUser identity exchange:", error.message);
+        log.error("Critical failure during signInUser identity exchange:", error);
         return { success: false, error: error.message || "Invalid security clearance token data." };
     }
+}
+
+export async function signOutUser() {
+    try {
+        const supabase = await createClient();
+        await supabase.auth.signOut();
+        log.info("User signed out securely.");
+    } catch (error: any) {
+        log.error("Error during sign out:", error);
+    }
+    
+    // Redirect outside try-catch to avoid swallowing Next.js redirect exceptions
+    const { redirect } = await import("next/navigation");
+    redirect("/auth/sign-in");
 }

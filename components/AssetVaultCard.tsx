@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Copy, Check, ShieldCheck, Eye, EyeOff } from "lucide-react";
+import { logClientError } from "@/lib/actions/telemetry.actions";
 
 interface VaultCardProps {
     bankName: string;
@@ -20,7 +21,7 @@ export default function AssetVaultCard({ bankName, accountName, mask, sharableId
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch (err) {
-            console.error("Clipboard failure:", err);
+            logClientError("Clipboard failure:", err);
         }
     };
 

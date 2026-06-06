@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
 import { authFormSchema } from "@/components/CustomInputField";
 import CustomInputField from "@/components/CustomInputField";
 import { signInUser } from "@/lib/actions/auth.actions"; // Import our new action
@@ -48,8 +49,8 @@ export default function SignInPage() {
             </div>
 
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
-                <CustomInputField register={form.register} name="email" label="Corporate Email" placeholder="pkalsi@apexledger.internal" type="email" />
-                <CustomInputField register={form.register} name="password" label="Access Key Vault Password" placeholder="••••••••••••" type="password" />
+                <CustomInputField register={form.register} name="email" label="Corporate Email" placeholder="pkalsi@apexledger.internal" type="email" error={form.formState.errors.email?.message} />
+                <CustomInputField register={form.register} name="password" label="Access Key Vault Password" placeholder="••••••••••••" type="password" error={form.formState.errors.password?.message} />
 
                 {formError && (
                     <div className="p-3 rounded-xl bg-red-950/30 border border-red-900/40 text-xs text-red-400 font-mono flex items-center gap-2">
@@ -66,6 +67,13 @@ export default function SignInPage() {
                     {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify Security Clearance"}
                 </button>
             </form>
+
+            <footer className="flex items-center justify-center gap-1 pt-2 text-xs">
+                <span className="text-slate-400">Do not possess clearance keys yet?</span>
+                <Link href="/auth/sign-up" className="font-semibold text-emerald-600 hover:underline dark:text-emerald-400">
+                    Initialize Profile
+                </Link>
+            </footer>
         </div>
     );
 }

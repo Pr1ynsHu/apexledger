@@ -2,43 +2,51 @@
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
-const vaultBalances = [
-  { name: "Primary Operations Vault", value: 284750.42, color: "#10b981" },
-  { name: "Reserve Capital Node", value: 167320.18, color: "#14b8a6" },
-  { name: "Liquidity Clearing Pool", value: 98430.65, color: "#475569" },
-];
-
-const totalBalance = vaultBalances.reduce((sum, v) => sum + v.value, 0);
+interface VaultBalance {
+  name: string;
+  value: number;
+  color: string;
+}
 
 function CustomTooltip({
   active,
   payload,
+  totalBalance,
 }: {
   active?: boolean;
   payload?: Array<{ payload: { name: string; value: number; color: string } }>;
+  totalBalance: number;
 }) {
   if (!active || !payload?.length) return null;
-  const data = payload[0].payload;
+  const itemData = payload[0].payload;
 
   return (
     <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700/80 rounded-xl px-4 py-3 shadow-2xl">
       <p className="text-[10px] font-mono tracking-wider text-slate-500 dark:text-zinc-500 uppercase mb-1">
-        {data.name}
+        {itemData.name}
       </p>
       <p className="text-base font-semibold text-slate-900 dark:text-zinc-100 font-mono">
         {new Intl.NumberFormat("en-US", {
           style: "currency",
           currency: "USD",
-        }).format(data.value)}
+        }).format(itemData.value)}
       </p>
       <p className="text-[10px] text-slate-500 dark:text-zinc-500 font-mono mt-0.5">
-        {((data.value / totalBalance) * 100).toFixed(1)}% of total
+        {((itemData.value / totalBalance) * 100).toFixed(1)}% of total
       </p>
     </div>
   );
 }
 
-export default function DonutChart() {
+export default function DonutChart({ data }: { data?: VaultBalance[] }) {
+  const vaultBalances = data?.length ? data : [
+    { name: "No Vaults Connected", value: 1, color: "#94a3b8" }
+  ];
+  
+  const totalBalance = data?.length 
+    ? vaultBalances.reduce((sum, v) => sum + v.value, 0)
+    : 0;
+
   return (
     <div className="w-full rounded-2xl border border-slate-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/40 backdrop-blur-sm p-5">
       <div className="flex items-center justify-between mb-4">
@@ -84,7 +92,7 @@ export default function DonutChart() {
               ))}
             </Pie>
             <Tooltip
-              content={<CustomTooltip />}
+              content={<CustomTooltip totalBalance={totalBalance} />}
               cursor={false}
             />
           </PieChart>

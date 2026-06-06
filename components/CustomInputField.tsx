@@ -21,9 +21,10 @@ interface InputProps {
     label: string;
     placeholder: string;
     type?: string;
+    error?: string;
 }
 
-export default function CustomInputField({ register, name, label, placeholder, type = "text" }: InputProps) {
+export default function CustomInputField({ register, name, label, placeholder, type = "text", error }: InputProps) {
     return (
         <div className="flex flex-col gap-1.5 w-full">
             <label className="text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400">
@@ -33,10 +34,19 @@ export default function CustomInputField({ register, name, label, placeholder, t
                 <input
                     type={type}
                     placeholder={placeholder}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:focus:border-emerald-500"
+                    className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all focus:ring-2 dark:bg-slate-900 dark:text-white ${
+                        error 
+                            ? "border-red-400 focus:border-red-500 focus:ring-red-500/10 dark:border-red-500/50" 
+                            : "border-slate-200 focus:border-emerald-500 focus:ring-emerald-500/10 dark:border-slate-800 dark:focus:border-emerald-500"
+                    }`}
                     {...register(name)}
                 />
             </div>
+            {error && (
+                <span className="text-[11px] text-red-500 font-medium ml-1">
+                    {error}
+                </span>
+            )}
         </div>
     );
 }

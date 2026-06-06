@@ -2,12 +2,17 @@ import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import RightSidebar from "@/components/RightSidebar";
 import TreasuryChatbot from "@/components/TreasuryChatbot";
+import { getOperatorProfile } from "@/lib/actions/profile.actions";
+import { getAssetAllocations } from "@/lib/actions/allocations.actions";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const profile = await getOperatorProfile();
+  const initialAllocations = await getAssetAllocations();
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-slate-50 dark:bg-zinc-950">
 
@@ -29,7 +34,7 @@ export default function DashboardLayout({
       </div>
 
       {/* 3. Persistent Desktop Right Metadata/Metrics Panel */}
-      <RightSidebar />
+      <RightSidebar profile={profile} initialAllocations={initialAllocations} />
 
       {/* 4. Global Treasury AI Assistant Interactive Toggle Node */}
       <TreasuryChatbot />

@@ -13,7 +13,7 @@ export default async function DashboardPage() {
   // Fetch consolidated liquidity from all active corporate bank accounts
   const { data: accounts } = await supabase
     .from("corporate_bank_accounts")
-    .select("current_balance");
+    .select("official_name, current_balance");
 
   const totalLiquidity = (accounts ?? []).reduce(
     (sum: number, acc: { current_balance: number }) => sum + (acc.current_balance ?? 0),
@@ -21,6 +21,14 @@ export default async function DashboardPage() {
   );
 
   const vaultCount = (accounts ?? []).length;
+
+  const colors = ["#10b981", "#14b8a6", "#475569", "#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b"];
+  
+  const donutData = (accounts ?? []).map((acc: { official_name: string; current_balance: number }, index: number) => ({
+    name: acc.official_name ?? `Vault ${index + 1}`,
+    value: acc.current_balance ?? 0,
+    color: colors[index % colors.length],
+  }));
 
   // Fetch the 7 most recent outbound transfers for the timeline chart
   const { data: recentTransfers } = await supabase
@@ -71,7 +79,7 @@ export default async function DashboardPage() {
       {/* Top Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <BalanceSummaryCard totalCurrentBalance={totalLiquidity} vaultCount={vaultCount} />
-        <DonutChart />
+        <DonutChart data={donutData} />
       </div>
 
       {/* Dynamic Charts Section */}

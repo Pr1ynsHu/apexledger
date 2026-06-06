@@ -129,10 +129,7 @@ export async function POST(req: Request) {
     });
 
   } catch (error: any) {
-    log.error("Critical exception triggered inside Gemini route context", {
-      message: error?.message,
-      stack: error?.stack,
-    });
+    log.error("Critical exception triggered inside Gemini route context", error);
     await log.flush();
 
     // Return a clear, actionable message for quota issues

@@ -2,6 +2,7 @@
 
 import { plaidClient } from "@/lib/plaid";
 import { createClient } from "@/lib/supabase";
+import { log } from "@/lib/logger";
 import { revalidatePath } from "next/cache";
 import { Products, CountryCode } from "plaid";
 
@@ -34,7 +35,7 @@ export async function generateLinkToken({ userId, clientName }: LinkTokenParams)
 
         return { success: true, linkToken: response.data.link_token };
     } catch (error: any) {
-        console.error("Critical exception caught inside generateLinkToken processing block:", error);
+        log.error("Critical exception caught inside generateLinkToken processing block:", error);
         return { success: false, error: error.message || "Failed to clear institution allocation token." };
     }
 }
@@ -82,7 +83,7 @@ export async function exchangePublicToken({ publicToken, institutionName, userId
 
         return { success: true };
     } catch (error: any) {
-        console.error("Critical failure during public token clearance processing:", error.message);
+        log.error("Critical failure during public token clearance processing:", error);
         return { success: false, error: error.message || "Failed to save secure banking vault channel." };
     }
 }

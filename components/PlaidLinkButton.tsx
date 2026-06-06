@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { usePlaidLink } from "react-plaid-link";
 import { ShieldAlert, Loader2, AlertCircle } from "lucide-react";
 import { generateLinkToken, exchangePublicToken } from "@/lib/actions/plaid.actions";
+import { logClientError } from "@/lib/actions/telemetry.actions";
+import { useRouter } from "next/navigation";
 interface PlaidButtonProps {
     userId: string;
 }
@@ -12,6 +14,7 @@ export default function PlaidLinkButton({ userId }: PlaidButtonProps) {
     const [token, setToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const router = useRouter();
 
     useEffect(() => {
         const fetchLinkToken = async () => {
@@ -27,7 +30,7 @@ export default function PlaidLinkButton({ userId }: PlaidButtonProps) {
                 }
             } catch (err: any) {
                 setErrorMessage(err.message || "Failed to contact token generator.");
-                console.error("Link Token Pipeline Error:", err);
+                logClientError("Link Token Pipeline Error:", err);
             } finally {
                 setIsLoading(false);
             }
@@ -44,10 +47,10 @@ export default function PlaidLinkButton({ userId }: PlaidButtonProps) {
                 institutionName: metadata.institution?.name || "Institutional Asset Vault",
             });
             if (response.success) {
-                console.log("Vault successfully linked into database clusters!");
+                router.refresh();
             }
         } catch (err) {
-            console.error("Exchange aborted:", err);
+            logClientError("Exchange aborted:", err);
         } finally {
             setIsLoading(false);
         }

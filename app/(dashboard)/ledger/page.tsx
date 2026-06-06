@@ -1,7 +1,9 @@
-import { getInstitutionalTransactions } from "@/lib/actions/bank.actions";
-import LedgerClient, { TransactionEntry } from "./LedgerClient";
+import { createClient } from "@/lib/supabase";
+import LedgerTable, { TransactionEntry } from "@/components/LedgerTable";
+import { log } from "@/lib/logger";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 0; // Enforce strict server separation
+
 
 export default async function LedgerAuditPage() {
   let transactions: TransactionEntry[] = [];
@@ -12,12 +14,30 @@ export default async function LedgerAuditPage() {
   };
 
   try {
-    const response = await getInstitutionalTransactions();
-    if (response?.success && response.transactions) {
-      transactions = response.transactions;
+    const supabase = await createClient();
+    
+    // Fetch directly from database for absolute Server/Client separation
+    const { data, error } = await supabase
+      .from("corporate_transfers")
+      .select("id, amount, status, routing_number, recipient_name, created_at, account_id, corporate_bank_accounts(official_name)")
+      .order("created_at", { ascending: false });
 
-      const total = response.transactions.length;
-      const cleared = response.transactions.filter((tx: any) => tx.status === "Cleared").length;
+    if (error) throw error;
+
+    if (data) {
+      // Map to expected LedgerTable shape
+      transactions = data.map((tx: any) => ({
+        id: tx.id,
+        date: new Date(tx.created_at).toLocaleDateString(),
+        counterparty: tx.recipient_name || "Unknown Entity",
+        category: "Transfer",
+        amount: tx.amount,
+        status: tx.status === "completed" ? "Settled" : "Pending",
+        bankName: tx.corporate_bank_accounts?.official_name || "Unknown Node",
+      }));
+
+      const total = transactions.length;
+      const cleared = transactions.filter(t => t.status === "Settled").length;
       const pending = total - cleared;
 
       stats = {
@@ -27,8 +47,8 @@ export default async function LedgerAuditPage() {
       };
     }
   } catch (err) {
-    console.error("Failed to sync server ledger data stream:", err);
+    log.error("Failed to fetch server ledger data stream:", err);
   }
 
-  return <LedgerClient transactions={transactions} stats={stats} />;
+  return <LedgerTable transactions={transactions} stats={stats} />;
 }

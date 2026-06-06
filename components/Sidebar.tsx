@@ -10,8 +10,11 @@ import {
   ArrowUpRight,
   ChevronRight,
   Activity,
+  Settings,
+  LogOut,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
+import { signOutUser } from "@/lib/actions/auth.actions";
 
 const navItems = [
   {
@@ -33,6 +36,11 @@ const navItems = [
     label: "Outbound Routing",
     href: "/transfer",
     icon: ArrowUpRight,
+  },
+  {
+    label: "Operator Profile",
+    href: "/profile",
+    icon: Settings,
   },
 ];
 
@@ -122,7 +130,16 @@ export default function Sidebar() {
             </span>
           </div>
         </div>
-        <ThemeToggle />
+        <div className="flex flex-col gap-2">
+          <ThemeToggle />
+          <button 
+            onClick={() => signOutUser()}
+            className="p-2 rounded-xl border border-slate-200 dark:border-zinc-800/80 bg-slate-50 dark:bg-zinc-900/40 text-slate-500 hover:text-red-600 dark:text-zinc-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer flex items-center justify-center"
+            title="Sign Out"
+          >
+            <LogOut size={16} />
+          </button>
+        </div>
       </div>
     </aside>
   );

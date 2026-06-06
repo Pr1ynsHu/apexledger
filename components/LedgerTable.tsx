@@ -1,7 +1,11 @@
 "use client";
 
-import { FileSearch, Filter, Download, Calendar, ChevronRight } from "lucide-react";
+import { FileSearch, Filter, Download, Calendar, ChevronRight, Search } from "lucide-react";
+import { useState } from "react";
 import jsPDF from "jspdf";
+
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 export interface TransactionEntry {
   id: string;
@@ -13,7 +17,7 @@ export interface TransactionEntry {
   bankName: string;
 }
 
-interface LedgerClientProps {
+interface LedgerTableProps {
   transactions: TransactionEntry[];
   stats: {
     totalEntries: number;
@@ -22,7 +26,15 @@ interface LedgerClientProps {
   };
 }
 
-export default function LedgerClient({ transactions, stats }: LedgerClientProps) {
+export default function LedgerTable({ transactions, stats }: LedgerTableProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredTransactions = transactions.filter((tx) =>
+    tx.counterparty.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    tx.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    tx.bankName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const handleExportPDF = () => {
     if (transactions.length === 0) return;
 
@@ -103,6 +115,16 @@ export default function LedgerClient({ transactions, stats }: LedgerClientProps)
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <div className="relative group">
+            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400 dark:text-zinc-500" />
+            <input
+              type="text"
+              placeholder="Search references..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-8 w-[160px] md:w-[200px] rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 pl-8 pr-3 text-xs font-mono text-slate-600 dark:text-zinc-300 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
+            />
+          </div>
           <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-mono text-slate-600 dark:text-zinc-400 uppercase tracking-wider hover:border-slate-300 dark:hover:border-slate-700 transition-all active:scale-[0.99] cursor-pointer">
             <Filter size={12} />
             Filter
@@ -156,83 +178,83 @@ export default function LedgerClient({ transactions, stats }: LedgerClientProps)
         </div>
 
         <div className="overflow-x-auto">
-          {transactions.length > 0 ? (
-            <table className="w-full">
-              <thead>
-                <tr className="text-left border-b border-slate-100 dark:border-zinc-800/40">
-                  <th className="px-5 py-2.5 text-[10px] font-mono font-semibold tracking-wider text-slate-400 dark:text-zinc-600 uppercase">
+          {filteredTransactions.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow className="border-b border-slate-100 dark:border-zinc-800/40 hover:bg-transparent">
+                  <TableHead className="text-[10px] font-mono font-semibold tracking-wider text-slate-400 dark:text-zinc-600 uppercase">
                     Settlement ID
-                  </th>
-                  <th className="px-5 py-2.5 text-[10px] font-mono font-semibold tracking-wider text-slate-400 dark:text-zinc-600 uppercase">
+                  </TableHead>
+                  <TableHead className="text-[10px] font-mono font-semibold tracking-wider text-slate-400 dark:text-zinc-600 uppercase">
                     Node
-                  </th>
-                  <th className="px-5 py-2.5 text-[10px] font-mono font-semibold tracking-wider text-slate-400 dark:text-zinc-600 uppercase">
+                  </TableHead>
+                  <TableHead className="text-[10px] font-mono font-semibold tracking-wider text-slate-400 dark:text-zinc-600 uppercase">
                     Counterparty
-                  </th>
-                  <th className="px-5 py-2.5 text-[10px] font-mono font-semibold tracking-wider text-slate-400 dark:text-zinc-600 uppercase hidden sm:table-cell">
+                  </TableHead>
+                  <TableHead className="text-[10px] font-mono font-semibold tracking-wider text-slate-400 dark:text-zinc-600 uppercase hidden sm:table-cell">
                     Category
-                  </th>
-                  <th className="px-5 py-2.5 text-[10px] font-mono font-semibold tracking-wider text-slate-400 dark:text-zinc-600 uppercase text-right">
+                  </TableHead>
+                  <TableHead className="text-[10px] font-mono font-semibold tracking-wider text-slate-400 dark:text-zinc-600 uppercase text-right">
                     Amount
-                  </th>
-                  <th className="px-5 py-2.5 text-[10px] font-mono font-semibold tracking-wider text-slate-400 dark:text-zinc-600 uppercase hidden md:table-cell">
+                  </TableHead>
+                  <TableHead className="text-[10px] font-mono font-semibold tracking-wider text-slate-400 dark:text-zinc-600 uppercase hidden md:table-cell">
                     Status
-                  </th>
-                  <th className="px-5 py-2.5 text-[10px] font-mono font-semibold tracking-wider text-slate-400 dark:text-zinc-600 uppercase text-right hidden md:table-cell">
+                  </TableHead>
+                  <TableHead className="text-[10px] font-mono font-semibold tracking-wider text-slate-400 dark:text-zinc-600 uppercase text-right hidden md:table-cell">
                     Date
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {transactions.map((entry) => {
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredTransactions.map((entry) => {
                   const isDebit = entry.amount > 0;
                   return (
-                    <tr
+                    <TableRow
                       key={entry.id}
                       className="border-b border-slate-50 dark:border-zinc-800/20 hover:bg-slate-50 dark:hover:bg-zinc-800/20 transition-colors group cursor-pointer"
                     >
-                      <td className="px-5 py-3 text-xs font-mono text-slate-400 dark:text-zinc-500">
+                      <TableCell className="py-3 text-xs font-mono text-slate-400 dark:text-zinc-500">
                         {entry.id.substring(0, 12)}...
-                      </td>
-                      <td className="px-5 py-3 text-xs font-mono font-bold tracking-wide text-slate-500 dark:text-zinc-400 uppercase">
+                      </TableCell>
+                      <TableCell className="py-3 text-xs font-mono font-bold tracking-wide text-slate-500 dark:text-zinc-400 uppercase">
                         {entry.bankName}
-                      </td>
-                      <td className="px-5 py-3 text-sm font-medium text-slate-800 dark:text-zinc-200">
+                      </TableCell>
+                      <TableCell className="py-3 text-sm font-medium text-slate-800 dark:text-zinc-200">
                         {entry.counterparty}
-                      </td>
-                      <td className="px-5 py-3 hidden sm:table-cell">
+                      </TableCell>
+                      <TableCell className="py-3 hidden sm:table-cell">
                         <span className="text-[10px] font-mono font-medium uppercase tracking-wider text-slate-400 dark:text-zinc-500 px-2 py-0.5 rounded bg-slate-100 dark:bg-zinc-800/50">
                           {entry.category}
                         </span>
-                      </td>
-                      <td
-                        className={`px-5 py-3 text-sm font-mono font-bold text-right ${isDebit ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"
-                          }`}
+                      </TableCell>
+                      <TableCell
+                        className={`py-3 text-sm font-mono font-bold text-right ${isDebit ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}
                       >
                         {isDebit ? "-" : "+"}
                         {new Intl.NumberFormat("en-US", {
                           style: "currency",
                           currency: "USD",
                         }).format(Math.abs(entry.amount))}
-                      </td>
-                      <td className="px-5 py-3 hidden md:table-cell">
-                        <span
-                          className={`inline-flex items-center text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${entry.status === "Cleared"
-                            ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10"
-                            : "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10"
+                      </TableCell>
+                      <TableCell className="py-3 hidden md:table-cell">
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] font-mono font-bold uppercase tracking-wider ${entry.status === "Settled"
+                            ? "text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-500/10"
+                            : "text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-500/10"
                             }`}
                         >
                           {entry.status}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-xs font-mono text-slate-400 dark:text-zinc-500 text-right hidden md:table-cell">
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-3 text-xs font-mono text-slate-400 dark:text-zinc-500 text-right hidden md:table-cell">
                         {entry.date}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           ) : (
             <div className="w-full py-12 text-center text-xs font-mono text-slate-400 dark:text-zinc-500">
               No real-time clearings found. Link a financial vault node to stream live ledger data.

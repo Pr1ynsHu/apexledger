@@ -93,26 +93,26 @@ export default function SignUpPage() {
 
                     {/* Identity Grid Row */}
                     <div className="flex gap-4 max-sm:flex-col">
-                        <CustomInputField register={form.register} name="firstName" label="First Name" placeholder="Priyanshu" />
-                        <CustomInputField register={form.register} name="lastName" label="Last Name" placeholder="Kalsi" />
+                        <CustomInputField register={form.register} name="firstName" label="First Name" placeholder="Priyanshu" error={form.formState.errors.firstName?.message} />
+                        <CustomInputField register={form.register} name="lastName" label="Last Name" placeholder="Kalsi" error={form.formState.errors.lastName?.message} />
                     </div>
 
                     {/* Location Routing Grid Rows */}
-                    <CustomInputField register={form.register} name="addressOne" label="Operational Address" placeholder="123 Financial District Ave" />
+                    <CustomInputField register={form.register} name="addressOne" label="Operational Address" placeholder="123 Financial District Ave" error={form.formState.errors.addressOne?.message} />
 
                     <div className="grid grid-cols-3 gap-4 max-sm:flex max-sm:flex-col">
-                        <div className="col-span-1"><CustomInputField register={form.register} name="city" label="City" placeholder="Amritsar" /></div>
-                        <div className="col-span-1"><CustomInputField register={form.register} name="state" label="State Code" placeholder="PB" /></div>
-                        <div className="col-span-1"><CustomInputField register={form.register} name="postalCode" label="Postal ID" placeholder="143001" /></div>
+                        <div className="col-span-1"><CustomInputField register={form.register} name="city" label="City" placeholder="Amritsar" error={form.formState.errors.city?.message} /></div>
+                        <div className="col-span-1"><CustomInputField register={form.register} name="state" label="State Code" placeholder="PB" error={form.formState.errors.state?.message} /></div>
+                        <div className="col-span-1"><CustomInputField register={form.register} name="postalCode" label="Postal ID" placeholder="143001" error={form.formState.errors.postalCode?.message} /></div>
                     </div>
 
                     {/* Validation Metrics Grid Row */}
                     <div className="flex gap-4 max-sm:flex-col">
-                        <CustomInputField register={form.register} name="dateOfBirth" label="Date of Birth" placeholder="YYYY-MM-DD" />
-                        <CustomInputField register={form.register} name="email" label="Corporate Email" placeholder="pkalsi@apexledger.internal" type="email" />
+                        <CustomInputField register={form.register} name="dateOfBirth" label="Date of Birth" placeholder="YYYY-MM-DD" error={form.formState.errors.dateOfBirth?.message} />
+                        <CustomInputField register={form.register} name="email" label="Corporate Email" placeholder="pkalsi@apexledger.internal" type="email" error={form.formState.errors.email?.message} />
                     </div>
 
-                    <CustomInputField register={form.register} name="password" label="Access Key Vault Password" placeholder="••••••••••••" type="password" />
+                    <CustomInputField register={form.register} name="password" label="Access Key Vault Password" placeholder="••••••••••••" type="password" error={form.formState.errors.password?.message} />
 
                     {/* Action Trigger Button System */}
                     <button

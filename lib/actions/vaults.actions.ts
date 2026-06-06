@@ -2,6 +2,7 @@
 
 import { plaidClient } from "@/lib/plaid";
 import { createClient } from "@/lib/supabase";
+import { log } from "@/lib/logger";
 import { revalidatePath } from "next/cache";
 
 interface ExchangeTokenParams {
@@ -53,7 +54,7 @@ export async function exchangePublicToken({
         return { success: true };
 
     } catch (error: any) {
-        console.error("Critical failure during public token clearance sequence:", error);
+        log.error("Critical failure during public token clearance sequence:", error);
         return { success: false, error: error.message || "Failed to finalize asset connection handshake." };
     }
 }
