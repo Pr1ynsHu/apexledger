@@ -60,6 +60,7 @@ export default function TransferForm({ initialAccounts }: { initialAccounts: Ban
   const [inDestinationId, setInDestinationId] = useState(initialAccounts[0]?.account_id || "");
 
   // ─── Outbound Classification ───
+  const [transactionScope, setTransactionScope] = useState<"opex" | "treasury">("opex");
   const [category, setCategory] = useState("");
 
   // ─── UX State ───
@@ -77,7 +78,7 @@ export default function TransferForm({ initialAccounts }: { initialAccounts: Ban
   });
 
   const isInternalValid = intSourceId && intDestinationId && amount && intSourceId !== intDestinationId;
-  const isOutboundValid = outSourceId && beneficiaryName && destinationAccountNumber && routingNumber && amount && category;
+  const isOutboundValid = outSourceId && beneficiaryName && destinationAccountNumber && routingNumber && amount && category && transactionScope;
   const isInboundValid = senderName && inDestinationId && amount;
 
   let isFormValid = false;
@@ -101,6 +102,7 @@ export default function TransferForm({ initialAccounts }: { initialAccounts: Ban
     let benName = undefined;
 
     let extCategory = undefined;
+    let extScope = undefined;
 
     if (transactionType === "internal") {
       sourceAccountId = intSourceId;
@@ -112,6 +114,7 @@ export default function TransferForm({ initialAccounts }: { initialAccounts: Ban
       extAccount = destinationAccountNumber;
       benName = beneficiaryName;
       extCategory = category;
+      extScope = transactionScope;
     } else if (transactionType === "inbound") {
       sourceAccountId = senderName; // External sender name
       destinationAccountId = inDestinationId;
@@ -129,6 +132,7 @@ export default function TransferForm({ initialAccounts }: { initialAccounts: Ban
         externalAccountNumber: extAccount,
         beneficiaryName: benName,
         category: extCategory,
+        transactionScope: extScope,
       });
 
       if (result.success) {
@@ -144,6 +148,7 @@ export default function TransferForm({ initialAccounts }: { initialAccounts: Ban
         setDestinationAccountNumber("");
         setSenderName("");
         setCategory("");
+        setTransactionScope("opex");
         form.setValue("amount", "");
         form.setValue("memo", "");
         form.setValue("category", "");
@@ -281,6 +286,31 @@ export default function TransferForm({ initialAccounts }: { initialAccounts: Ban
 
               {/* ═══════════ OUTBOUND PAYOUT TAB ═══════════ */}
               <TabsContent value="outbound" className="space-y-5 mt-0">
+                <div className="p-1 bg-slate-100 dark:bg-zinc-800/60 rounded-xl grid grid-cols-2 gap-1 mb-2">
+                  <button
+                    type="button"
+                    onClick={() => { setTransactionScope("opex"); setCategory(""); form.setValue("category", ""); }}
+                    className={`py-2 text-xs font-mono uppercase tracking-wider rounded-lg transition-all ${
+                      transactionScope === "opex"
+                        ? "bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-sm"
+                        : "text-slate-500 hover:text-slate-700 dark:text-zinc-400 dark:hover:text-zinc-300 hover:bg-slate-200/50 dark:hover:bg-zinc-700/50"
+                    }`}
+                  >
+                    OpEx Clearing
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setTransactionScope("treasury"); setCategory(""); form.setValue("category", ""); }}
+                    className={`py-2 text-xs font-mono uppercase tracking-wider rounded-lg transition-all ${
+                      transactionScope === "treasury"
+                        ? "bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-sm"
+                        : "text-slate-500 hover:text-slate-700 dark:text-zinc-400 dark:hover:text-zinc-300 hover:bg-slate-200/50 dark:hover:bg-zinc-700/50"
+                    }`}
+                  >
+                    Treasury Action
+                  </button>
+                </div>
+
                 <FormField
                   control={form.control}
                   name="sourceId"
@@ -490,7 +520,7 @@ export default function TransferForm({ initialAccounts }: { initialAccounts: Ban
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
-                        Expenditure Category Classification
+                        {transactionScope === "opex" ? "OpEx Category Classification" : "Treasury Action Classification"}
                       </FormLabel>
                       <Select
                         value={category}
@@ -505,9 +535,19 @@ export default function TransferForm({ initialAccounts }: { initialAccounts: Ban
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="SFT">SFT — Software Licensing</SelectItem>
-                          <SelectItem value="HDW">HDW — Hardware Procurement</SelectItem>
-                          <SelectItem value="LGL">LGL — Legal & Compliance</SelectItem>
+                          {transactionScope === "opex" ? (
+                            <>
+                              <SelectItem value="SFT">SFT — Software Licensing</SelectItem>
+                              <SelectItem value="HDW">HDW — Hardware Procurement</SelectItem>
+                              <SelectItem value="LGL">LGL — Legal & Compliance</SelectItem>
+                            </>
+                          ) : (
+                            <>
+                              <SelectItem value="TAX">TAX — Corporate Tax Remittance</SelectItem>
+                              <SelectItem value="DIV">DIV — Shareholder Dividend</SelectItem>
+                              <SelectItem value="REB">REB — Vendor Rebate</SelectItem>
+                            </>
+                          )}
                         </SelectContent>
                       </Select>
                       <FormMessage />

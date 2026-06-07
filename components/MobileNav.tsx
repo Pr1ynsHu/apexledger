@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import { signOutUser } from "@/lib/actions/auth.actions";
+import SystemStatusTicker from "./SystemStatusTicker";
 
 const navItems = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -158,14 +159,7 @@ export default function MobileNav() {
                 System Status
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
-              </div>
-              <span className="text-xs text-slate-600 dark:text-zinc-400 font-mono">
-                All pipelines operational
-              </span>
-            </div>
+            <SystemStatusTicker />
           </div>
           <button 
             onClick={() => signOutUser()}

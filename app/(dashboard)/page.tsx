@@ -3,6 +3,7 @@ import DonutChart from "@/components/DonutChart";
 import DashboardCharts from "@/components/DashboardCharts";
 import TransactionRow from "@/components/TransactionRow";
 import { TrendingUp, ArrowUpRight } from "lucide-react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 
 export const revalidate = 0;
@@ -132,10 +133,10 @@ export default async function DashboardPage() {
               Recent Settlements
             </h3>
           </div>
-          <button className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 uppercase tracking-wider transition-colors cursor-pointer">
+          <Link href="/ledger" className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 uppercase tracking-wider transition-colors cursor-pointer">
             View All
             <ArrowUpRight size={11} />
-          </button>
+          </Link>
         </div>
 
         <div className="overflow-x-auto">

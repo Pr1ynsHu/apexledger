@@ -7,6 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
 import { Wallet, Loader2, AlertCircle } from "lucide-react";
+import { signUpUser } from "@/lib/actions/auth.actions";
+import ThemeToggle from "@/components/ThemeToggle";
 import CustomInputField, { authFormSchema } from "@/components/CustomInputField";
 
 export default function SignUpPage() {
@@ -61,7 +63,12 @@ export default function SignUpPage() {
     };
 
     return (
-        <div className="flex min-h-screen w-full items-center justify-center bg-slate-50 p-6 dark:bg-slate-950">
+        <div className="relative flex min-h-screen w-full items-center justify-center bg-slate-50 p-6 dark:bg-slate-950">
+            {/* Theme Toggle */}
+            <div className="absolute top-6 right-6 z-50">
+                <ThemeToggle />
+            </div>
+
             <div className="flex w-full max-w-[540px] flex-col gap-6 rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
 
                 {/* Top Branding Section */}

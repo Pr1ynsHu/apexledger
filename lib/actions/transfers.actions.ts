@@ -24,6 +24,7 @@ interface InitiateTransferParams {
     externalAccountNumber?: string;
     beneficiaryName?: string;
     category?: string;
+    transactionScope?: "opex" | "treasury";
 }
 
 export async function initiateTreasuryTransfer({
@@ -37,6 +38,7 @@ export async function initiateTreasuryTransfer({
     externalAccountNumber,
     beneficiaryName,
     category,
+    transactionScope,
 }: InitiateTransferParams) {
     const supabase = await createClient();
 
@@ -169,6 +171,7 @@ export async function initiateTreasuryTransfer({
                     external_account_number: externalAccountNumber,
                     beneficiary_name: beneficiaryName,
                     category: category,
+                    transaction_scope: transactionScope,
                 },
             ])
             .select()
@@ -204,5 +207,46 @@ export async function initiateTreasuryTransfer({
         await log.flush();
 
         return { success: false, error: error?.message || "Internal database ledger error." };
+    }
+}
+
+// ─── Auto-Sync Logic for Polling Alternative ───
+export async function syncPendingStripeTransfers() {
+    const supabase = await createClient();
+    try {
+        const { data: userRecord, error: authError } = await supabase.auth.getUser();
+        if (authError || !userRecord?.user) return; // Silent abort if not logged in
+
+        const { data: pendingTransfers, error } = await supabase
+            .from("corporate_transfers")
+            .select("id, network_transaction_id, transaction_type")
+            .eq("status", "pending")
+            .not("network_transaction_id", "is", null);
+
+        if (error || !pendingTransfers || pendingTransfers.length === 0) return;
+
+        for (const tx of pendingTransfers) {
+            if (tx.network_transaction_id.startsWith("po_")) {
+                const payout = await stripe.payouts.retrieve(tx.network_transaction_id);
+                if (payout.status === 'paid' || payout.status === 'canceled' || payout.status === 'failed') {
+                    const newStatus = payout.status === 'paid' ? 'settled' : 'failed';
+                    await supabase.rpc('update_transfer_status_by_network_id', {
+                        network_id: tx.network_transaction_id,
+                        new_status: newStatus
+                    });
+                }
+            } else if (tx.network_transaction_id.startsWith("pi_")) {
+                const pi = await stripe.paymentIntents.retrieve(tx.network_transaction_id);
+                if (pi.status === 'succeeded' || pi.status === 'canceled') {
+                    const newStatus = pi.status === 'succeeded' ? 'settled' : 'failed';
+                    await supabase.rpc('update_transfer_status_by_network_id', {
+                        network_id: tx.network_transaction_id,
+                        new_status: newStatus
+                    });
+                }
+            }
+        }
+    } catch (error) {
+        log.error("Failed to sync pending Stripe transfers", error);
     }
 }

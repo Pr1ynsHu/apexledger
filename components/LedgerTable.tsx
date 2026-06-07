@@ -1,11 +1,13 @@
 "use client";
 
 import { FileSearch, Filter, Download, Calendar, ChevronRight, Search } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import jsPDF from "jspdf";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export interface TransactionEntry {
   id: string;
@@ -28,12 +30,73 @@ interface LedgerTableProps {
 
 export default function LedgerTable({ transactions, stats }: LedgerTableProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTx, setSelectedTx] = useState<any | null>(null);
+  const [visibleCount, setVisibleCount] = useState(10);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [nodeFilter, setNodeFilter] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>();
+  const [transactionType, setTransactionType] = useState<string>('ALL'); // ALL, CREDIT, DEBIT
+  const [amountRange, setAmountRange] = useState<{ min: string; max: string }>({ min: '', max: '' });
 
-  const filteredTransactions = transactions.filter((tx) =>
-    tx.counterparty.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    tx.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    tx.bankName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const setQuarter = (q: number) => {
+    const year = new Date().getFullYear();
+    let from, to;
+    if (q === 1) { from = new Date(year, 0, 1); to = new Date(year, 2, 31); }
+    else if (q === 2) { from = new Date(year, 3, 1); to = new Date(year, 5, 30); }
+    else if (q === 3) { from = new Date(year, 6, 1); to = new Date(year, 8, 30); }
+    else if (q === 4) { from = new Date(year, 9, 1); to = new Date(year, 11, 31); }
+    if (from && to) {
+      setDateRange({ from, to });
+    }
+  };
+
+  const filteredData = useMemo(() => {
+    return transactions.filter((tx) => {
+      const matchesSearch = tx.counterparty.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tx.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tx.bankName.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesStatus = statusFilter && statusFilter !== 'ALL' 
+        ? tx.status.toUpperCase() === statusFilter 
+        : true;
+        
+      const matchesNode = nodeFilter && nodeFilter !== 'ALL' 
+        ? tx.bankName.toUpperCase() === nodeFilter 
+        : true;
+
+      // Type Filter
+      let matchesType = true;
+      if (transactionType === 'CREDIT') matchesType = tx.amount > 0;
+      else if (transactionType === 'DEBIT') matchesType = tx.amount < 0;
+
+      // Amount Range Filter
+      let matchesAmount = true;
+      const absAmount = Math.abs(tx.amount);
+      if (amountRange.min !== '') matchesAmount = matchesAmount && absAmount >= Number(amountRange.min);
+      if (amountRange.max !== '') matchesAmount = matchesAmount && absAmount <= Number(amountRange.max);
+
+      // Date Range Filter
+      let matchesDate = true;
+      if (dateRange?.from) {
+        const txDate = new Date((tx as any).created_at || tx.date);
+        txDate.setHours(0,0,0,0);
+        if (dateRange.from) {
+          const fromDate = new Date(dateRange.from);
+          fromDate.setHours(0,0,0,0);
+          matchesDate = matchesDate && txDate >= fromDate;
+        }
+        if (dateRange.to) {
+          const toDate = new Date(dateRange.to);
+          toDate.setHours(23,59,59,999);
+          matchesDate = matchesDate && txDate <= toDate;
+        }
+      }
+
+      return matchesSearch && matchesStatus && matchesNode && matchesType && matchesAmount && matchesDate;
+    });
+  }, [transactions, searchQuery, statusFilter, nodeFilter, transactionType, amountRange, dateRange]);
+
+  const displayedData = filteredData.slice(0, visibleCount);
 
   const handleExportPDF = () => {
     if (transactions.length === 0) return;
@@ -126,10 +189,110 @@ export default function LedgerTable({ transactions, stats }: LedgerTableProps) {
               className="h-8 w-[160px] md:w-[200px] rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 pl-8 pr-3 text-xs font-mono text-slate-600 dark:text-zinc-300 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
             />
           </div>
-          <button suppressHydrationWarning={true} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-mono text-slate-600 dark:text-zinc-400 uppercase tracking-wider hover:border-slate-300 dark:hover:border-slate-700 transition-all active:scale-[0.99] cursor-pointer">
-            <Filter size={12} />
-            Filter
-          </button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button suppressHydrationWarning={true} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-mono text-slate-600 dark:text-zinc-400 uppercase tracking-wider hover:border-slate-300 dark:hover:border-slate-700 transition-all active:scale-[0.99] cursor-pointer">
+                <Filter size={12} />
+                Advanced Filters
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 sm:w-96 p-4 rounded-xl shadow-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950" align="end">
+              <div className="space-y-4">
+                <h4 className="font-semibold text-sm text-slate-900 dark:text-zinc-100">Filter Transactions</h4>
+                
+                {/* Date Filters */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Timeframe (Quarter)</label>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4].map(q => (
+                      <button key={q} onClick={() => setQuarter(q)} className="flex-1 py-1.5 px-2 border border-slate-200 dark:border-zinc-800 rounded-lg text-xs font-medium hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors">
+                        Q{q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Custom Date Range</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="date" 
+                      className="flex-1 text-xs p-2 border border-slate-200 dark:border-zinc-800 rounded-lg bg-transparent focus:outline-none focus:border-emerald-500"
+                      value={dateRange?.from ? dateRange.from.toISOString().split('T')[0] : ''}
+                      onChange={(e) => setDateRange(prev => ({ ...prev, from: e.target.value ? new Date(e.target.value) : undefined }))}
+                    />
+                    <input 
+                      type="date" 
+                      className="flex-1 text-xs p-2 border border-slate-200 dark:border-zinc-800 rounded-lg bg-transparent focus:outline-none focus:border-emerald-500"
+                      value={dateRange?.to ? dateRange.to.toISOString().split('T')[0] : ''}
+                      onChange={(e) => setDateRange(prev => ({ ...prev, to: e.target.value ? new Date(e.target.value) : undefined }))}
+                    />
+                  </div>
+                </div>
+
+                {/* Amount Filter */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Amount Range (USD)</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="number" 
+                      placeholder="Min" 
+                      className="flex-1 text-xs p-2 border border-slate-200 dark:border-zinc-800 rounded-lg bg-transparent focus:outline-none focus:border-emerald-500"
+                      value={amountRange.min}
+                      onChange={e => setAmountRange(prev => ({ ...prev, min: e.target.value }))}
+                    />
+                    <input 
+                      type="number" 
+                      placeholder="Max" 
+                      className="flex-1 text-xs p-2 border border-slate-200 dark:border-zinc-800 rounded-lg bg-transparent focus:outline-none focus:border-emerald-500"
+                      value={amountRange.max}
+                      onChange={e => setAmountRange(prev => ({ ...prev, max: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                {/* Status & Type */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Status</label>
+                    <select 
+                      className="w-full text-xs p-2 border border-slate-200 dark:border-zinc-800 rounded-lg bg-transparent focus:outline-none focus:border-emerald-500 text-slate-900 dark:text-zinc-100"
+                      value={statusFilter || 'ALL'}
+                      onChange={e => setStatusFilter(e.target.value)}
+                    >
+                      <option value="ALL">All Statuses</option>
+                      <option value="SETTLED">Settled</option>
+                      <option value="PENDING">Pending</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Type</label>
+                    <select 
+                      className="w-full text-xs p-2 border border-slate-200 dark:border-zinc-800 rounded-lg bg-transparent focus:outline-none focus:border-emerald-500 text-slate-900 dark:text-zinc-100"
+                      value={transactionType}
+                      onChange={e => setTransactionType(e.target.value)}
+                    >
+                      <option value="ALL">All Types</option>
+                      <option value="CREDIT">Inbound (Credit)</option>
+                      <option value="DEBIT">Outbound (Debit)</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <button 
+                  onClick={() => {
+                    setDateRange(undefined);
+                    setStatusFilter('ALL');
+                    setTransactionType('ALL');
+                    setAmountRange({ min: '', max: '' });
+                  }}
+                  className="w-full py-2.5 mt-2 text-xs font-semibold border border-slate-200 dark:border-zinc-800 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors"
+                >
+                  Clear Filters
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
           <button
             suppressHydrationWarning={true}
             onClick={handleExportPDF}
@@ -180,7 +343,7 @@ export default function LedgerTable({ transactions, stats }: LedgerTableProps) {
         </div>
 
         <div className="overflow-x-auto">
-          {filteredTransactions.length > 0 ? (
+          {displayedData.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow className="border-b border-slate-100 dark:border-zinc-800/40 hover:bg-transparent">
@@ -208,11 +371,12 @@ export default function LedgerTable({ transactions, stats }: LedgerTableProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTransactions.map((entry) => {
+                {displayedData.map((entry) => {
                   const isDebit = entry.amount < 0;
                   return (
                     <TableRow
                       key={entry.id}
+                      onClick={() => setSelectedTx(entry)}
                       className="border-b border-slate-50 dark:border-zinc-800/20 hover:bg-slate-50 dark:hover:bg-zinc-800/20 transition-colors group cursor-pointer"
                     >
                       <TableCell className="py-3 text-xs font-mono text-slate-400 dark:text-zinc-500">
@@ -270,14 +434,89 @@ export default function LedgerTable({ transactions, stats }: LedgerTableProps) {
         {/* Footer */}
         <div className="px-5 py-3 border-t border-slate-100 dark:border-zinc-800/40 flex items-center justify-between">
           <span className="text-[10px] font-mono text-slate-400 dark:text-zinc-600 uppercase tracking-wider">
-            Showing {transactions.length} entries
+            Showing {displayedData.length} of {filteredData.length} entries
           </span>
-          <button suppressHydrationWarning={true} className="flex items-center gap-1 text-[10px] font-mono text-emerald-600 dark:text-emerald-400 uppercase tracking-wider hover:underline cursor-pointer">
-            Load More
-            <ChevronRight size={11} />
-          </button>
+          {visibleCount < filteredData.length && (
+            <button 
+              onClick={() => setVisibleCount(prev => prev + 10)} 
+              suppressHydrationWarning={true} 
+              className="flex items-center gap-1 text-[10px] font-mono text-emerald-600 dark:text-emerald-400 uppercase tracking-wider hover:underline cursor-pointer"
+            >
+              Load More
+              <ChevronRight size={11} />
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Details Slide-out Sheet */}
+      <Sheet open={!!selectedTx} onOpenChange={(open) => !open && setSelectedTx(null)}>
+        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Transaction Details</SheetTitle>
+            <SheetDescription>
+              View complete immutable audit record for this ledger entry.
+            </SheetDescription>
+          </SheetHeader>
+          
+          {selectedTx && (
+            <div className="mt-6 space-y-6">
+              <div className="space-y-1">
+                <p className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Settlement ID</p>
+                <p className="text-sm font-mono text-slate-900 dark:text-zinc-100">{selectedTx.id}</p>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Timestamp</p>
+                <p className="text-sm font-sans text-slate-900 dark:text-zinc-100">
+                  {new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'long' }).format(new Date(selectedTx.created_at || selectedTx.date))}
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Node / Institution</p>
+                <p className="text-sm font-sans font-medium text-slate-900 dark:text-zinc-100">{selectedTx.bankName}</p>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Counterparty Destination</p>
+                <p className="text-sm font-sans text-slate-900 dark:text-zinc-100">{selectedTx.counterparty}</p>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Category</p>
+                <Badge variant="secondary" className="font-mono text-[10px] tracking-wider uppercase mt-1">
+                  {selectedTx.category}
+                </Badge>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Status</p>
+                <Badge
+                  variant="outline"
+                  className={`text-[10px] font-mono font-bold uppercase tracking-wider mt-1 ${selectedTx.status === "Settled"
+                    ? "text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-500/10"
+                    : "text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-500/10"
+                    }`}
+                >
+                  {selectedTx.status}
+                </Badge>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 dark:border-zinc-800">
+                <p className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Net Settlement Amount</p>
+                <p className={`text-2xl font-mono font-bold mt-1 ${selectedTx.amount < 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                  {selectedTx.amount < 0 ? "-" : "+"}
+                  {new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  }).format(Math.abs(selectedTx.amount))}
+                </p>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

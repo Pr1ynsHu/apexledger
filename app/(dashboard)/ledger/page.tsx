@@ -4,6 +4,7 @@ export const revalidate = 0; // Enforce strict server separation
 import { createClient } from "@/lib/supabase";
 import LedgerTable, { TransactionEntry } from "@/components/LedgerTable";
 import { log } from "@/lib/logger";
+import { syncPendingStripeTransfers } from "@/lib/actions/transfers.actions";
 
 export default async function LedgerAuditPage() {
   let transactions: TransactionEntry[] = [];
@@ -16,6 +17,9 @@ export default async function LedgerAuditPage() {
   try {
     const supabase = await createClient();
     
+    // Auto-sync any pending Stripe transfers before fetching the final UI view
+    await syncPendingStripeTransfers();
+
     // Fetch directly from database for absolute Server/Client separation
     const { data, error } = await supabase
       .from("corporate_transfers")

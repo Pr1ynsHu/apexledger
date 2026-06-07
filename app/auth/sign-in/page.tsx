@@ -7,6 +7,7 @@ import Link from "next/link";
 import { z } from "zod";
 import { Loader2, AlertCircle, Mail, Lock, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { signInUser } from "@/lib/actions/auth.actions";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const signInSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -15,7 +16,7 @@ const signInSchema = z.object({
 
 export default function SignInPage() {
     const [isLoading, setIsLoading] = useState(false);
-    const [formError, setFormError] = useState<string | null>(null);
+    const [authError, setAuthError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
 
     const form = useForm<z.infer<typeof signInSchema>>({
@@ -25,7 +26,7 @@ export default function SignInPage() {
 
     const onSubmit = async (data: z.infer<typeof signInSchema>) => {
         setIsLoading(true);
-        setFormError(null);
+        setAuthError(null);
         try {
             const response = await signInUser({ email: data.email, password: data.password });
 
@@ -33,17 +34,22 @@ export default function SignInPage() {
                 // Ensure a clean window.location.href redirect to push hard past middleware
                 window.location.href = "/vaults";
             } else if (response.error) {
-                setFormError(response.error);
+                setAuthError(response.error);
                 setIsLoading(false);
             }
         } catch (err: any) {
-            setFormError("An unexpected systemic authentication crash occurred.");
+            setAuthError("An unexpected systemic authentication crash occurred.");
             setIsLoading(false);
         }
     };
 
     return (
-        <div className="relative flex items-center justify-center min-h-screen bg-[#090a0f] overflow-hidden selection:bg-emerald-500/30 w-full">
+        <div className="relative flex items-center justify-center min-h-screen bg-slate-50 dark:bg-[#090a0f] overflow-hidden selection:bg-emerald-500/30 w-full">
+            {/* Theme Toggle */}
+            <div className="absolute top-6 right-6 z-50">
+                <ThemeToggle />
+            </div>
+
             {/* Grid Mask Background */}
             <div 
                 className="absolute inset-0 z-0 pointer-events-none"
@@ -59,15 +65,15 @@ export default function SignInPage() {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none z-0" />
 
             {/* Main Card Structure */}
-            <div className="relative z-10 flex flex-col gap-8 w-full max-w-[420px] p-8 mx-auto rounded-3xl border border-white/[0.05] bg-[#0d0e14]/80 backdrop-blur-xl shadow-2xl">
+            <div className="relative z-10 flex flex-col gap-8 w-full max-w-[420px] p-8 mx-auto rounded-3xl border border-slate-200 dark:border-white/[0.05] bg-white/80 dark:bg-[#0d0e14]/80 backdrop-blur-xl shadow-2xl">
                 
                 {/* Header */}
                 <div className="flex flex-col gap-2 items-center text-center">
                     <div className="w-14 h-14 mb-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
                         <ShieldCheck size={28} className="text-emerald-400" />
                     </div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">Access Vault Node</h1>
-                    <p className="text-sm text-slate-400">Provide clearance credentials to mount treasury layers.</p>
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Access Vault Node</h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Provide clearance credentials to mount treasury layers.</p>
                 </div>
 
                 {/* Form */}
@@ -75,14 +81,14 @@ export default function SignInPage() {
                     
                     {/* Email Input */}
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Corporate Email</label>
+                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Corporate Email</label>
                         <div className="relative">
                             <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
                             <input
                                 {...form.register("email")}
                                 type="email"
                                 placeholder="operator@apexledger.internal"
-                                className="w-full bg-[#090a0f] border border-white/[0.08] rounded-xl pl-10 pr-4 h-12 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all"
+                                className="w-full bg-white dark:bg-[#090a0f] border border-slate-200 dark:border-white/[0.08] rounded-xl pl-10 pr-4 h-12 text-sm text-slate-900 dark:text-slate-200 placeholder:text-slate-500 dark:placeholder:text-slate-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all"
                             />
                         </div>
                         {form.formState.errors.email && (
@@ -92,14 +98,14 @@ export default function SignInPage() {
 
                     {/* Password Input */}
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Access Key</label>
+                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Access Key</label>
                         <div className="relative">
                             <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
                             <input
                                 {...form.register("password")}
                                 type={showPassword ? "text" : "password"}
                                 placeholder="••••••••••••"
-                                className="w-full bg-[#090a0f] border border-white/[0.08] rounded-xl pl-10 pr-10 h-12 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all font-mono tracking-widest"
+                                className="w-full bg-white dark:bg-[#090a0f] border border-slate-200 dark:border-white/[0.08] rounded-xl pl-10 pr-10 h-12 text-sm text-slate-900 dark:text-slate-200 placeholder:text-slate-500 dark:placeholder:text-slate-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all font-mono tracking-widest"
                             />
                             <button
                                 type="button"
@@ -115,10 +121,10 @@ export default function SignInPage() {
                     </div>
 
                     {/* Error Banner */}
-                    {formError && (
+                    {authError && (
                         <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-400 font-mono flex items-start gap-2.5">
                             <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                            <span className="leading-relaxed">{formError}</span>
+                            <span className="leading-relaxed">{authError}</span>
                         </div>
                     )}
 

@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import { signOutUser } from "@/lib/actions/auth.actions";
+import SystemStatusTicker from "./SystemStatusTicker";
+import SignOutButton from "./SignOutButton";
 
 const navItems = [
   {
@@ -121,25 +123,11 @@ export default function Sidebar() {
               System Status
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
-            </div>
-            <span className="text-xs text-slate-600 dark:text-zinc-400 font-mono">
-              All pipelines operational
-            </span>
-          </div>
+          <SystemStatusTicker />
         </div>
         <div className="flex flex-col gap-2">
           <ThemeToggle />
-          <button 
-            suppressHydrationWarning={true}
-            onClick={() => signOutUser()}
-            className="p-2 rounded-xl border border-slate-200 dark:border-zinc-800/80 bg-slate-50 dark:bg-zinc-900/40 text-slate-500 hover:text-red-600 dark:text-zinc-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer flex items-center justify-center"
-            title="Sign Out"
-          >
-            <LogOut size={16} />
-          </button>
+          <SignOutButton />
         </div>
       </div>
     </aside>
