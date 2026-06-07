@@ -92,7 +92,7 @@ export default function LedgerTable({ transactions, stats }: LedgerTableProps) {
 
       doc.text(entry.status, 154, y);
 
-      const isDebit = entry.amount > 0;
+      const isDebit = entry.amount < 0;
       const formattedAmount = `${isDebit ? "-" : "+"}${new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Math.abs(entry.amount))}`;
       doc.text(formattedAmount, 196, y, { align: "right" });
 
@@ -118,6 +118,7 @@ export default function LedgerTable({ transactions, stats }: LedgerTableProps) {
           <div className="relative group">
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400 dark:text-zinc-500" />
             <input
+              suppressHydrationWarning={true}
               type="text"
               placeholder="Search references..."
               value={searchQuery}
@@ -125,11 +126,12 @@ export default function LedgerTable({ transactions, stats }: LedgerTableProps) {
               className="h-8 w-[160px] md:w-[200px] rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 pl-8 pr-3 text-xs font-mono text-slate-600 dark:text-zinc-300 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
             />
           </div>
-          <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-mono text-slate-600 dark:text-zinc-400 uppercase tracking-wider hover:border-slate-300 dark:hover:border-slate-700 transition-all active:scale-[0.99] cursor-pointer">
+          <button suppressHydrationWarning={true} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-mono text-slate-600 dark:text-zinc-400 uppercase tracking-wider hover:border-slate-300 dark:hover:border-slate-700 transition-all active:scale-[0.99] cursor-pointer">
             <Filter size={12} />
             Filter
           </button>
           <button
+            suppressHydrationWarning={true}
             onClick={handleExportPDF}
             disabled={transactions.length === 0}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-mono text-slate-600 dark:text-zinc-400 uppercase tracking-wider hover:border-slate-300 dark:hover:border-slate-700 transition-all active:scale-[0.99] disabled:opacity-40 cursor-pointer"
@@ -207,14 +209,16 @@ export default function LedgerTable({ transactions, stats }: LedgerTableProps) {
               </TableHeader>
               <TableBody>
                 {filteredTransactions.map((entry) => {
-                  const isDebit = entry.amount > 0;
+                  const isDebit = entry.amount < 0;
                   return (
                     <TableRow
                       key={entry.id}
                       className="border-b border-slate-50 dark:border-zinc-800/20 hover:bg-slate-50 dark:hover:bg-zinc-800/20 transition-colors group cursor-pointer"
                     >
                       <TableCell className="py-3 text-xs font-mono text-slate-400 dark:text-zinc-500">
-                        {entry.id.substring(0, 12)}...
+                        {entry.id.startsWith("pi_") || entry.id.startsWith("tr_")
+                          ? entry.id.substring(0, 24) + (entry.id.length > 24 ? "…" : "")
+                          : entry.id.substring(0, 8) + "…"}
                       </TableCell>
                       <TableCell className="py-3 text-xs font-mono font-bold tracking-wide text-slate-500 dark:text-zinc-400 uppercase">
                         {entry.bankName}
@@ -228,6 +232,7 @@ export default function LedgerTable({ transactions, stats }: LedgerTableProps) {
                         </span>
                       </TableCell>
                       <TableCell
+                        suppressHydrationWarning
                         className={`py-3 text-sm font-mono font-bold text-right ${isDebit ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}
                       >
                         {isDebit ? "-" : "+"}
@@ -247,7 +252,7 @@ export default function LedgerTable({ transactions, stats }: LedgerTableProps) {
                           {entry.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="py-3 text-xs font-mono text-slate-400 dark:text-zinc-500 text-right hidden md:table-cell">
+                      <TableCell suppressHydrationWarning className="py-3 text-xs font-mono text-slate-400 dark:text-zinc-500 text-right hidden md:table-cell">
                         {entry.date}
                       </TableCell>
                     </TableRow>
@@ -267,7 +272,7 @@ export default function LedgerTable({ transactions, stats }: LedgerTableProps) {
           <span className="text-[10px] font-mono text-slate-400 dark:text-zinc-600 uppercase tracking-wider">
             Showing {transactions.length} entries
           </span>
-          <button className="flex items-center gap-1 text-[10px] font-mono text-emerald-600 dark:text-emerald-400 uppercase tracking-wider hover:underline cursor-pointer">
+          <button suppressHydrationWarning={true} className="flex items-center gap-1 text-[10px] font-mono text-emerald-600 dark:text-emerald-400 uppercase tracking-wider hover:underline cursor-pointer">
             Load More
             <ChevronRight size={11} />
           </button>

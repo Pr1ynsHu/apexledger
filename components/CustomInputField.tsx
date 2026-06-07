@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { UseFormRegister } from "react-hook-form";
 import { z } from "zod";
+import { Eye, EyeOff } from "lucide-react";
 
 export const authFormSchema = z.object({
     email: z.string().email("Invalid corporate email address format."),
@@ -25,6 +27,10 @@ interface InputProps {
 }
 
 export default function CustomInputField({ register, name, label, placeholder, type = "text", error }: InputProps) {
+    const [showPassword, setShowPassword] = useState(false);
+    const isPassword = type === "password";
+    const inputType = isPassword ? (showPassword ? "text" : "password") : type;
+
     return (
         <div className="flex flex-col gap-1.5 w-full">
             <label className="text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400">
@@ -32,15 +38,24 @@ export default function CustomInputField({ register, name, label, placeholder, t
             </label>
             <div className="flex flex-col w-full relative">
                 <input
-                    type={type}
+                    type={inputType}
                     placeholder={placeholder}
-                    className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all focus:ring-2 dark:bg-slate-900 dark:text-white ${
+                    className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all focus:ring-2 dark:bg-slate-900 dark:text-white ${isPassword ? 'pr-10' : ''} ${
                         error 
                             ? "border-red-400 focus:border-red-500 focus:ring-red-500/10 dark:border-red-500/50" 
                             : "border-slate-200 focus:border-emerald-500 focus:ring-emerald-500/10 dark:border-slate-800 dark:focus:border-emerald-500"
                     }`}
                     {...register(name)}
                 />
+                {isPassword && (
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                    >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                )}
             </div>
             {error && (
                 <span className="text-[11px] text-red-500 font-medium ml-1">

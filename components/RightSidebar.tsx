@@ -15,94 +15,57 @@ import { AssetAllocation } from "@/lib/actions/allocations.actions";
 
 /* ─── Dummy Data ─── */
 
-const FALLBACK_ALLOCATIONS = [
-  {
-    label: "Software Licensing",
-    category: "SFT",
-    amount: 124800,
-    budget: 200000,
-    icon: Monitor,
-    color: "#10b981", // emerald-500
-  },
-  {
-    label: "Hardware Procurement",
-    category: "HDW",
-    amount: 78250,
-    budget: 150000,
-    icon: HardDrive,
-    color: "#14b8a6", // teal-500
-  },
-  {
-    label: "Legal & Compliance",
-    category: "LGL",
-    amount: 43100,
-    budget: 60000,
-    icon: Scale,
-    color: "#64748b", // slate-500
-  },
+const budgets = [
+  { name: 'Software Licensing', code: 'SFT', cap: 200000, icon: Monitor, color: "#10b981" },
+  { name: 'Hardware Procurement', code: 'HDW', cap: 150000, icon: HardDrive, color: "#14b8a6" },
+  { name: 'Legal & Compliance', code: 'LGL', cap: 60000, icon: Scale, color: "#64748b" }
 ];
 
-export default function RightSidebar({ 
+export default function RightSidebar({
   profile,
-  initialAllocations 
-}: { 
+  initialAllocations
+}: {
   profile: OperatorProfile | null;
   initialAllocations?: AssetAllocation[];
 }) {
   const [isProfileExpanded, setIsProfileExpanded] = useState(false);
-  const [liveAllocations, setLiveAllocations] = useState<any[]>([]);
+  const [liveAllocations, setLiveAllocations] = useState<any[]>(budgets.map(b => ({ ...b, amount: 0, budget: b.cap })));
 
   useEffect(() => {
-    // Map initial DB allocations to UI format
-    const formatAllocations = (dbAllocations: AssetAllocation[]) => {
-      if (!dbAllocations || dbAllocations.length === 0) return FALLBACK_ALLOCATIONS;
-      
-      return dbAllocations.map(a => {
-        // Map icon based on category
-        let icon = Monitor;
-        if (a.category === "HDW") icon = HardDrive;
-        if (a.category === "LGL") icon = Scale;
-
-        return {
-          label: a.label,
-          category: a.category,
-          amount: Number(a.amount_utilized),
-          budget: Number(a.budget_limit),
-          color: a.color_hex,
-          icon,
-        };
-      });
-    };
-
-    setLiveAllocations(formatAllocations(initialAllocations || []));
-
     const supabase = createClient();
 
-    // Subscribe to real-time changes
+    const fetchBudgets = async () => {
+      const { data, error } = await supabase
+        .from('corporate_transfers')
+        .select('*')
+        .eq('transaction_type', 'outbound')
+        .eq('status', 'settled');
+
+      if (!error && data) {
+        const mapped = budgets.map((b) => {
+          const utilizedAmount = data
+            .filter((tx: any) => tx.category === b.code)
+            .reduce((sum: number, tx: any) => sum + Number(tx.amount), 0);
+
+          return {
+            ...b,
+            amount: utilizedAmount,
+            budget: b.cap,
+          };
+        });
+        setLiveAllocations(mapped);
+      }
+    };
+
+    fetchBudgets();
+
     const channel = supabase
-      .channel("realtime-allocations")
+      .channel("realtime-transfers-budget")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "asset_allocations" },
-        (payload) => {
-          // Because we only get the changed row, the easiest way to keep state strictly synced 
-          // without complex array merging is to just re-fetch or optimistically update.
-          // For this implementation, we will update the specific row in state:
-          setLiveAllocations((current) => {
-            const newRecord = payload.new as AssetAllocation;
-            if (!newRecord || !newRecord.category) return current;
-
-            return current.map(item => {
-              if (item.category === newRecord.category) {
-                return {
-                  ...item,
-                  amount: Number(newRecord.amount_utilized),
-                  budget: Number(newRecord.budget_limit),
-                };
-              }
-              return item;
-            });
-          });
+        { event: "*", schema: "public", table: "corporate_transfers" },
+        () => {
+          fetchBudgets();
         }
       )
       .subscribe();
@@ -110,7 +73,7 @@ export default function RightSidebar({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [initialAllocations]);
+  }, []);
 
   // Fallback to default if somehow null
   const activeProfile = profile || {
@@ -194,7 +157,8 @@ export default function RightSidebar({
           </div>
 
           {/* Expand */}
-          <button 
+          <button
+            suppressHydrationWarning={true}
             onClick={() => setIsProfileExpanded(!isProfileExpanded)}
             className="w-full mt-3.5 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-white dark:bg-zinc-800/40 hover:bg-slate-100 dark:hover:bg-zinc-800/70 border border-slate-200 dark:border-transparent text-slate-600 dark:text-zinc-500 hover:text-slate-900 dark:hover:text-zinc-300 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer"
           >
@@ -231,13 +195,14 @@ export default function RightSidebar({
         </span>
 
         <div className="space-y-4">
-          {liveAllocations.map((item) => {
-            const percentage = Math.round((item.amount / item.budget) * 100);
+          {liveAllocations.map((item, index) => {
+            const utilizedAmount = item.amount;
+            const percentUtilized = Math.round(Math.min((utilizedAmount / item.budget) * 100, 100));
             const Icon = item.icon;
 
             return (
               <div
-                key={item.category}
+                key={item.code || `allocation-${index}`}
                 className="rounded-xl border border-slate-200 dark:border-zinc-800/60 bg-white dark:bg-zinc-900/30 p-3.5 transition-colors hover:border-slate-300 dark:hover:border-zinc-700/60"
               >
                 {/* Header Row */}
@@ -245,11 +210,11 @@ export default function RightSidebar({
                   <div className="flex items-center gap-2">
                     <Icon size={13} style={{ color: item.color }} />
                     <span className="text-xs text-slate-700 dark:text-zinc-300 font-medium">
-                      {item.label}
+                      {item.name}
                     </span>
                   </div>
                   <span className="text-[10px] font-mono tracking-wider text-slate-500 dark:text-zinc-600 uppercase">
-                    {item.category}
+                    {item.code}
                   </span>
                 </div>
 
@@ -258,7 +223,7 @@ export default function RightSidebar({
                   <div
                     className="h-full rounded-full transition-all duration-700 ease-out"
                     style={{
-                      width: `${percentage}%`,
+                      width: `${percentUtilized}%`,
                       backgroundColor: item.color,
                     }}
                   />
@@ -271,7 +236,7 @@ export default function RightSidebar({
                       style: "currency",
                       currency: "USD",
                       maximumFractionDigits: 0,
-                    }).format(item.amount)}
+                    }).format(utilizedAmount)}
                   </span>
                   <span className="text-[10px] font-mono text-slate-500 dark:text-zinc-600">
                     of{" "}
@@ -292,7 +257,7 @@ export default function RightSidebar({
                       backgroundColor: `${item.color}15`,
                     }}
                   >
-                    {percentage}% utilized
+                    {percentUtilized}% utilized
                   </span>
                 </div>
               </div>

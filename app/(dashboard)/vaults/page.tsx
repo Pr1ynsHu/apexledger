@@ -16,13 +16,31 @@ export default async function VaultsPage() {
 
     const activeSessionUserId = user.id;
 
-    // 2. Fetch directly from database for absolute Server/Client separation
+    // 2. Fetch baseline configurations for clearing nodes
     const { data: accounts, error: dbError } = await supabase
         .from("corporate_bank_accounts")
         .select("account_id, official_name, mask, current_balance");
 
+    const { data: transfers } = await supabase
+        .from("corporate_transfers")
+        .select("amount, source_account_id, destination_account_id")
+        .eq("status", "settled");
+
     const connectedVaults = accounts || [];
-    const totalLiquidity = connectedVaults.reduce((sum, acc) => sum + (acc.current_balance || 0), 0);
+    
+    // 3. Compute the dynamic absolute totals
+    const dynamicAccounts = connectedVaults.map(acc => {
+        const totalCredits = transfers?.filter(tx => tx.destination_account_id === acc.account_id).reduce((sum, tx) => sum + Number(tx.amount), 0) || 0;
+        const totalDebits = transfers?.filter(tx => tx.source_account_id === acc.account_id).reduce((sum, tx) => sum + Number(tx.amount), 0) || 0;
+        const dynamicBalance = acc.current_balance + totalCredits - totalDebits;
+        
+        return {
+            ...acc,
+            current_balance: dynamicBalance
+        };
+    });
+
+    const totalLiquidity = dynamicAccounts.reduce((sum, acc) => sum + acc.current_balance, 0);
     const databaseFetchError = !!dbError;
 
     return (
@@ -68,7 +86,7 @@ export default async function VaultsPage() {
             </div>
 
             {/* Dynamic Card Layout Grid */}
-            <BankCardGrid accounts={connectedVaults} />
+            <BankCardGrid accounts={dynamicAccounts} />
         </main>
     );
 }

@@ -13,7 +13,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 export default function ProfilePage() {
   const router = useRouter();
   const [loadingProfile, setLoadingProfile] = useState(true);
-  
+
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
   const [email, setEmail] = useState("");
@@ -99,7 +99,7 @@ export default function ProfilePage() {
       <div className="border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleProfileSubmit)} className="space-y-5">
-            
+
             {/* 1. Name Input Field */}
             <FormField
               control={form.control}

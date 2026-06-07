@@ -63,6 +63,7 @@ export default function TreasuryChatbot() {
       {/* 🟢 Toggle Floating Action Button */}
       {!isOpen && (
         <button
+          suppressHydrationWarning={true}
           onClick={() => setIsOpen(true)}
           className="flex items-center justify-center h-12 w-12 rounded-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white shadow-lg transition-transform active:scale-95 cursor-pointer"
         >
@@ -82,6 +83,7 @@ export default function TreasuryChatbot() {
               </span>
             </div>
             <button
+              suppressHydrationWarning={true}
               onClick={() => setIsOpen(false)}
               className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 cursor-pointer"
             >
@@ -118,6 +120,7 @@ export default function TreasuryChatbot() {
           {/* Outbound Input Field Submission Control Form */}
           <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-100 dark:border-zinc-800/60 bg-white dark:bg-zinc-900 flex items-center gap-2">
             <input
+              suppressHydrationWarning={true}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -125,6 +128,7 @@ export default function TreasuryChatbot() {
               className="flex-1 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800/80 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500 focus:dark:border-emerald-400 font-sans"
             />
             <button
+              suppressHydrationWarning={true}
               type="submit"
               disabled={!input.trim() || isTyping}
               className="p-1.5 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-emerald-500 dark:hover:text-emerald-400 disabled:opacity-40 transition-colors cursor-pointer"
