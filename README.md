@@ -43,11 +43,9 @@ ApexLedger bridges the gap between external banking gateways and internal databa
 *   Google Generative AI (Gemini for financial insights)
 *   React Hook Form + Zod (Schema-validated forms)
 *   jsPDF (Client-side PDF report generation)
-*   Date-fns (Date and time manipulation)
 
 **Observability & Monitoring:**
 *   AxiomHQ (Logging)
-*   LogRocket (Session replay & performance monitoring)
 
 ---
 
@@ -58,7 +56,7 @@ ApexLedger bridges the gap between external banking gateways and internal databa
 Ensure you have the following installed and configured:
 *   Node.js (v20+)
 *   npm, yarn, or pnpm
-*   Accounts for Supabase, Stripe, Plaid, Google AI Studio, Axiom, and LogRocket.
+*   Accounts for Supabase, Stripe, Plaid, Google AI Studio, and Axiom.
 
 ### Installation
 
@@ -95,9 +93,8 @@ Ensure you have the following installed and configured:
     # Google Generative AI
     GOOGLE_GEMINI_API_KEY=your_gemini_api_key
 
-    # Monitoring (Axiom & LogRocket)
+    # Monitoring (Axiom)
     AXIOM_TOKEN=your_axiom_token
-    NEXT_PUBLIC_LOGROCKET_APP_ID=your_logrocket_app_id
     ```
 
 4.  **Run the Development Server:**
